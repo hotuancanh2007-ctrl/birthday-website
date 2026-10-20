@@ -2,8 +2,6 @@ import * as THREE from 'three';
 import gsap from 'gsap';
 import { birthdayData } from '../data/birthdayData.js';
 import '../styles/galaxy.css';
-import { BackButton } from './BackButton';
-import '../styles/back-button.css';
 
 export class GalaxyScreen {
   constructor(parentElement, options = {}) {
@@ -101,16 +99,7 @@ export class GalaxyScreen {
         </div>
       </div>
     `;
-    this.backBtn = new BackButton(this.element, {
-      variant: 'glass',
-      position: 'top-left',
-      label: 'Thư tình',
-      onClick: () => {
-        // Quay lại màn hình Letter (hoặc gọi callback tương ứng)
-        transitionToLetterScreen(); // Tùy thuộc vào hàm điều hướng của bạn ở main.js
-      }
-    });
-    this.backBtn.mount();
+
     this.parent.appendChild(this.element);
     this._setupModal();
     this._setupCTA();
@@ -136,28 +125,19 @@ export class GalaxyScreen {
     const canvas = this.element.querySelector('#galaxy-canvas');
     const w = window.innerWidth;
     const h = window.innerHeight;
-    const isMobile = w < 768;
-    this.prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    this.renderer = new THREE.WebGLRenderer({
-      canvas,
-      antialias: true,
-      alpha: true,
-      powerPreference: "high-performance"
-    });
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
     this.renderer.setSize(w, h);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-    this.renderer.setClearColor(0x1a0b1c, 1);
+    this.renderer.setClearColor(0x05020a, 1); // Deep cosmic void
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.15;
 
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.FogExp2(0x2d1b36, 0.015);
+    this.scene.fog = new THREE.FogExp2(0x0a0514, 0.015);
 
-    // [Responsive] FOV 75 cho mobile để bao quát được không gian vũ trụ
-    this.camera = new THREE.PerspectiveCamera(isMobile ? 75 : 55, w / h, 0.1, 300);
+    this.camera = new THREE.PerspectiveCamera(55, w / h, 0.1, 300);
     this.camera.position.set(0, 0, 18);
     this.cameraTarget = new THREE.Vector3(0, 0, 0);
   }
@@ -170,6 +150,9 @@ export class GalaxyScreen {
   }
 
   _buildMultiLayerCosmos() {
+    const textureLoader = new THREE.TextureLoader();
+
+    // Deep static stars
     const starGeo = new THREE.BufferGeometry();
     const starCount = 2500;
     const starPos = new Float32Array(starCount * 3);
@@ -187,8 +170,9 @@ export class GalaxyScreen {
     this.scene.add(this.deepStars);
     this.disposables.push(starGeo, starMat);
 
+    // Glowing Nebula Sprites
     const nebulaGeo = new THREE.PlaneGeometry(80, 80);
-    const nebulaColors = [0x5c2a7a, 0x2a1b54];
+    const nebulaColors = [0x5c2a7a, 0x2a1b54, 0x8a3a70, 0x18244c];
     this.nebulas = [];
 
     const canvas = document.createElement('canvas');
@@ -711,21 +695,12 @@ export class GalaxyScreen {
   }
 
   _onResize() {
-
-    if (!this.camera || !this.renderer) return;
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    const isMobile = width < 768;
-
-    this.camera.aspect = width / height;
-    // [Responsive] Luôn cập nhật FOV theo kích thước hiện tại
-    this.camera.fov = isMobile ? 75 : 55;
+    if (!this.renderer || !this.camera) return;
+    const w = window.innerWidth; const h = window.innerHeight;
+    this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
-
-    this.renderer.setSize(width, height);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setSize(w, h);
   }
-
 
   _setupModal() {
     this.overlayEl = this.element.querySelector('#galaxy-modal-overlay');
@@ -794,7 +769,7 @@ export class GalaxyScreen {
   destroy(onComplete) {
     document.body.style.cursor = 'default';
     cancelAnimationFrame(this.animFrameId);
-    if (this.backBtn) this.backBtn.destroy();
+
     window.removeEventListener('keydown', this._onKeyDown);
     window.removeEventListener('resize', this._onResizeBound);
     if (this._canvas) {
