@@ -217,19 +217,22 @@ export class LetterScreen {
 
     const width = window.innerWidth;
     const height = window.innerHeight;
-    const isMobile = width < 768; // [Tối ưu]
+    const isMobile = width < 768;
 
     this.threeScene = new THREE.Scene();
-    this.threeCamera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
-    this.threeCamera.position.z = 15;
+
+    // [Responsive] Tăng FOV để tránh làm trái tim to chiếm hết màn hình điện thoại
+    this.threeCamera = new THREE.PerspectiveCamera(isMobile ? 75 : 60, width / height, 0.1, 1000);
+    // [Responsive] Lùi Camera xa hơn (z=22) so với PC (z=15)
+    this.threeCamera.position.z = isMobile ? 22 : 15;
 
     this.threeRenderer = new THREE.WebGLRenderer({
       canvas: this.threeCanvas,
       alpha: true,
-      antialias: !isMobile,
+      antialias: true,
     });
     this.threeRenderer.setSize(width, height);
-    this.threeRenderer.setPixelRatio(isMobile ? 1 : Math.min(window.devicePixelRatio, 2));
+    this.threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
     const ambientLight = new THREE.AmbientLight(0xfff0f5, 1.2);
     this.threeScene.add(ambientLight);
@@ -245,7 +248,7 @@ export class LetterScreen {
     ];
 
     this.floatingHearts = [];
-    const heartCount = isMobile ? 6 : 18; // [Tối ưu] Cắt bớt trái tim bay trên di động
+    const heartCount = 18;
     for (let i = 0; i < heartCount; i++) {
       const mat = heartMaterials[i % heartMaterials.length];
       const mesh = new THREE.Mesh(heartGeometry, mat);
@@ -273,7 +276,7 @@ export class LetterScreen {
       this.floatingHearts.push(mesh);
     }
 
-    const particleCount = isMobile ? 35 : 110; // [Tối ưu] Cắt giảm hạt nền
+    const particleCount = 110;
     const particleGeo = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
     const colors = new Float32Array(particleCount * 3);
@@ -364,12 +367,19 @@ export class LetterScreen {
   }
 
   handleResize() {
-    if (!this.threeRenderer || !this.threeCamera) return;
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    this.threeCamera.aspect = w / h;
+    if (!this.threeCamera || !this.threeRenderer) return;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const isMobile = width < 768;
+
+    this.threeCamera.aspect = width / height;
+    // [Responsive] Cập nhật lại thuộc tính Camera
+    this.threeCamera.fov = isMobile ? 75 : 60;
+    this.threeCamera.position.z = isMobile ? 22 : 15;
     this.threeCamera.updateProjectionMatrix();
-    this.threeRenderer.setSize(w, h);
+
+    this.threeRenderer.setSize(width, height);
+    this.threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   }
 
   // ─── TÁCH KÝ TỰ BẢO TOÀN HIỂN THỊ MÀU SẮC & CẤU TRÚC TỪ ───────────────────

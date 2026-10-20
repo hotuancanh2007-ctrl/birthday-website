@@ -136,17 +136,17 @@ export class GalaxyScreen {
     const canvas = this.element.querySelector('#galaxy-canvas');
     const w = window.innerWidth;
     const h = window.innerHeight;
+    const isMobile = w < 768;
     this.prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    this.isMobile = w < 768; // [Tối ưu]
 
     this.renderer = new THREE.WebGLRenderer({
       canvas,
-      antialias: !this.isMobile,
+      antialias: true,
       alpha: true,
       powerPreference: "high-performance"
     });
     this.renderer.setSize(w, h);
-    this.renderer.setPixelRatio(this.isMobile ? 1 : Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
     this.renderer.setClearColor(0x1a0b1c, 1);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -156,7 +156,8 @@ export class GalaxyScreen {
     this.scene = new THREE.Scene();
     this.scene.fog = new THREE.FogExp2(0x2d1b36, 0.015);
 
-    this.camera = new THREE.PerspectiveCamera(55, w / h, 0.1, 300);
+    // [Responsive] FOV 75 cho mobile để bao quát được không gian vũ trụ
+    this.camera = new THREE.PerspectiveCamera(isMobile ? 75 : 55, w / h, 0.1, 300);
     this.camera.position.set(0, 0, 18);
     this.cameraTarget = new THREE.Vector3(0, 0, 0);
   }
@@ -169,9 +170,8 @@ export class GalaxyScreen {
   }
 
   _buildMultiLayerCosmos() {
-    // Deep static stars
     const starGeo = new THREE.BufferGeometry();
-    const starCount = this.isMobile ? 600 : 2500; // [Tối ưu] Cắt giảm số ngôi sao
+    const starCount = 2500;
     const starPos = new Float32Array(starCount * 3);
     for (let i = 0; i < starCount; i++) {
       const r = 40 + Math.random() * 100;
@@ -187,20 +187,19 @@ export class GalaxyScreen {
     this.scene.add(this.deepStars);
     this.disposables.push(starGeo, starMat);
 
-    // Glowing Nebula Sprites
     const nebulaGeo = new THREE.PlaneGeometry(80, 80);
-    const nebulaColors = [0x5c2a7a, 0x2a1b54]; // [Tối ưu] Giảm số lượng tinh vân
+    const nebulaColors = [0x5c2a7a, 0x2a1b54];
     this.nebulas = [];
 
     const canvas = document.createElement('canvas');
-    canvas.width = 128; canvas.height = 128; // [Tối ưu] Rút gọn kích thước texture
+    canvas.width = 256; canvas.height = 256;
     const ctx = canvas.getContext('2d');
-    const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+    const grad = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
     grad.addColorStop(0, 'rgba(255,255,255,1)');
     grad.addColorStop(0.2, 'rgba(255,255,255,0.6)');
     grad.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 128, 128);
+    ctx.fillRect(0, 0, 256, 256);
     const nebulaTex = new THREE.CanvasTexture(canvas);
     this.disposables.push(nebulaTex, nebulaGeo);
 
@@ -712,12 +711,21 @@ export class GalaxyScreen {
   }
 
   _onResize() {
-    if (!this.renderer || !this.camera) return;
-    const w = window.innerWidth; const h = window.innerHeight;
-    this.camera.aspect = w / h;
+
+    if (!this.camera || !this.renderer) return;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const isMobile = width < 768;
+
+    this.camera.aspect = width / height;
+    // [Responsive] Luôn cập nhật FOV theo kích thước hiện tại
+    this.camera.fov = isMobile ? 75 : 55;
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(w, h);
+
+    this.renderer.setSize(width, height);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   }
+
 
   _setupModal() {
     this.overlayEl = this.element.querySelector('#galaxy-modal-overlay');
