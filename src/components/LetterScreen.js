@@ -502,9 +502,7 @@ export class LetterScreen {
       html = `
         <div style="width: 100%; display: flex; justify-content: center;">
           <button class="btn-continue-journey" id="btn-continue-journey" aria-label="${continueText}">
-            <span aria-hidden="true">✨</span>
             <span>${continueText}</span>
-            <span aria-hidden="true">✨</span>
           </button>
         </div>
       `;

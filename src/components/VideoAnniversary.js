@@ -89,7 +89,7 @@ export class VideoAnniversary {
         <div class="cinema-badge">OUR LITTLE CINEMA</div>
         <h1 class="cinema-intro-title">A Galaxy of Memories</h1>
         <p class="cinema-intro-subtitle">Tonight, this little cinema is just for us. Every moment with you feels like magic. ♡</p>
-        <button class="btn-open-cinema" id="btn-open-cinema">Enter Our Cinema ✨</button>
+        <button class="btn-open-cinema" id="btn-open-cinema">Xem phim homm bé</button>
       </div>
 
       <div class="cinema-wrapper" id="cinema-wrapper">
@@ -115,7 +115,7 @@ export class VideoAnniversary {
             <div class="video-gallery-track" id="gallery-track"></div>
           </div>
           <div class="next-page-container">
-             <button class="btn-next-page" id="btn-next-page">Tới Phần Tiếp Theo ✨</button>
+             <button class="btn-next-page" id="btn-next-page">Phần Cuối Òi nè bé</button>
           </div>
         </div>
       </div>
