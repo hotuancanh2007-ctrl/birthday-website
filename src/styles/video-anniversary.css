@@ -1,0 +1,432 @@
+/* ==========================================================================
+   ULTRA-PREMIUM PINK CINEMA (2026) - GALAXY & CUTE CATS
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Inter:wght@400;500;600&display=swap');
+
+:root {
+    --cosmic-plum: #17091F;
+    --midnight-violet: #24112F;
+    --galaxy-pink: #FF63B8;
+    --neon-rose: #FF8BD1;
+    --pastel-pink: #FFD6EB;
+    --lavender: #BCA7FF;
+    --champagne-white: #FFF5FC;
+
+    --glass-bg: rgba(36, 17, 47, 0.4);
+    --glass-border: rgba(255, 214, 235, 0.15);
+
+    --text-main: #FFF5FC;
+    --text-muted: #FFD6EB;
+}
+
+#video-anniversary-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: var(--cosmic-plum);
+    overflow: hidden;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--text-main);
+    user-select: none;
+    perspective: 1200px;
+}
+
+#three-canvas-container {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* Cinematic Dim Overlay for Focus Mode */
+.cinema-dim-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(23, 9, 31, 0.85);
+    z-index: 5;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 1.5s ease;
+    backdrop-filter: blur(8px);
+}
+
+body[data-cinema-focus="true"] .cinema-dim-overlay {
+    opacity: 1;
+}
+
+/* --- INTRO UI --- */
+.cinema-intro-overlay {
+    position: absolute;
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 4rem 3.5rem;
+    background: var(--glass-bg);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4), inset 0 0 20px rgba(255, 99, 184, 0.1);
+    max-width: 90vw;
+    width: 580px;
+}
+
+.cinema-badge {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 5px;
+    color: var(--cosmic-plum);
+    background: var(--pastel-pink);
+    padding: 6px 18px;
+    border-radius: 20px;
+    margin-bottom: 1.2rem;
+    box-shadow: 0 0 15px rgba(255, 99, 184, 0.4);
+    text-transform: uppercase;
+}
+
+.cinema-intro-title {
+    font-size: 3.2rem;
+    font-weight: 700;
+    margin: 0 0 1rem 0;
+    color: var(--champagne-white);
+    text-shadow: 0 4px 15px rgba(255, 99, 184, 0.5);
+}
+
+.cinema-intro-subtitle {
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    line-height: 1.7;
+    color: var(--text-muted);
+    margin-bottom: 3rem;
+}
+
+.btn-open-cinema {
+    position: relative;
+    padding: 1.2rem 3.5rem;
+    font-family: 'Inter', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--cosmic-plum);
+    background: linear-gradient(135deg, var(--pastel-pink) 0%, var(--galaxy-pink) 100%);
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    pointer-events: auto;
+    box-shadow: 0 10px 25px rgba(255, 99, 184, 0.4);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.btn-open-cinema:hover {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 15px 35px rgba(255, 99, 184, 0.6);
+}
+
+/* --- THE MAIN STAGE & CUTE CATS --- */
+.cinema-wrapper {
+    position: relative;
+    z-index: 10;
+    width: 85vw;
+    max-width: 1100px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.cinema-wrapper.active {
+    pointer-events: auto;
+}
+
+/* Premium Luminous Frame */
+.cinema-screen-container {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 16px;
+    padding: 4px;
+    position: relative;
+    background: linear-gradient(135deg, rgba(255, 214, 235, 0.3), rgba(255, 99, 184, 0.1));
+    backdrop-filter: blur(10px);
+    box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6),
+        0 0 0 1px rgba(255, 214, 235, 0.2),
+        0 0 40px rgba(255, 99, 184, 0.2);
+    display: flex;
+    z-index: 10;
+    transition: box-shadow 1.5s ease;
+}
+
+body[data-cinema-focus="true"] .cinema-screen-container {
+    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.9), 0 0 60px rgba(255, 99, 184, 0.3);
+}
+
+.cinema-screen-container::before {
+    content: '';
+    position: absolute;
+    inset: -15px;
+    background: radial-gradient(ellipse at center, var(--galaxy-pink) 0%, transparent 70%);
+    opacity: 0.15;
+    z-index: -1;
+    filter: blur(20px);
+    animation: pulseHalo 4s infinite alternate;
+}
+
+@keyframes pulseHalo {
+    0% {
+        opacity: 0.15;
+        transform: scale(1);
+    }
+
+    100% {
+        opacity: 0.25;
+        transform: scale(1.02);
+    }
+}
+
+.cinema-screen-container video {
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    object-fit: contain;
+    background: #000;
+    outline: none;
+    z-index: 2;
+    position: relative;
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+}
+
+.cat-sleeping {
+    position: absolute;
+    top: -35px;
+    right: 40px;
+    width: 70px;
+    height: 40px;
+    z-index: 15;
+    pointer-events: none;
+    filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.5));
+}
+
+.cat-peeking {
+    position: absolute;
+    bottom: -10px;
+    left: -50px;
+    width: 60px;
+    height: 60px;
+    z-index: 15;
+    pointer-events: none;
+    transform: rotate(-15deg);
+    filter: drop-shadow(5px 5px 10px rgba(0, 0, 0, 0.5));
+}
+
+body[data-cinema-focus="true"] .cat-sleeping,
+body[data-cinema-focus="true"] .cat-peeking {
+    opacity: 0.1;
+    transition: opacity 1.5s;
+}
+
+/* --- INFO & CONTROLS --- */
+.cinema-ui-layer {
+    width: 100%;
+    transition: opacity 1s ease, transform 1s ease;
+    position: relative;
+    z-index: 10;
+}
+
+body[data-cinema-focus="true"] .cinema-ui-layer {
+    opacity: 0;
+    transform: translateY(15px);
+    pointer-events: none;
+}
+
+body[data-cinema-focus="true"] .cinema-ui-layer:hover {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.cinema-details-bar {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-top: 1.5rem;
+    padding: 0 1rem;
+}
+
+.video-text-info h2 {
+    font-size: 2.2rem;
+    margin: 0;
+    color: var(--champagne-white);
+    font-weight: 700;
+    text-shadow: 0 2px 10px rgba(255, 99, 184, 0.4);
+}
+
+.video-text-info p {
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    margin: 8px 0 0 0;
+    color: var(--lavender);
+    font-weight: 500;
+}
+
+.cinema-nav-controls {
+    display: flex;
+    gap: 16px;
+}
+
+.cinema-nav-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(36, 17, 47, 0.6);
+    border: 1px solid var(--glass-border);
+    color: var(--pastel-pink);
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+}
+
+.cinema-nav-btn:hover {
+    background: var(--galaxy-pink);
+    color: var(--cosmic-plum);
+    transform: scale(1.1);
+    box-shadow: 0 0 20px rgba(255, 99, 184, 0.5);
+    border-color: var(--galaxy-pink);
+}
+
+/* --- FILM STRIP GALLERY --- */
+.video-gallery-wrapper {
+    width: 100%;
+    margin-top: 2rem;
+    overflow-x: auto;
+    padding: 10px 5px 20px 5px;
+    scrollbar-width: none;
+    position: relative;
+}
+
+.video-gallery-wrapper::-webkit-scrollbar {
+    display: none;
+}
+
+.video-gallery-track {
+    display: flex;
+    gap: 20px;
+    padding: 0 10px;
+}
+
+.gallery-item {
+    flex: 0 0 180px;
+    height: 100px;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.4s ease;
+    background: var(--midnight-violet);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+}
+
+.gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s ease;
+    opacity: 0.6;
+}
+
+.gallery-item-info {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(23, 9, 31, 0.9) 0%, transparent 80%);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 12px;
+    color: var(--champagne-white);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity 0.3s;
+    text-align: center;
+}
+
+.gallery-item:hover {
+    border-color: var(--lavender);
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(188, 167, 255, 0.2);
+}
+
+.gallery-item:hover img {
+    opacity: 0.8;
+    transform: scale(1.05);
+}
+
+.gallery-item:hover .gallery-item-info {
+    opacity: 1;
+}
+
+.gallery-item.active {
+    border-color: var(--galaxy-pink);
+    transform: translateY(-5px);
+    box-shadow: 0 0 25px rgba(255, 99, 184, 0.4);
+}
+
+.gallery-item.active img {
+    opacity: 1;
+}
+
+.gallery-item.active .gallery-item-info {
+    opacity: 1;
+}
+
+/* --- NÚT CHUYỂN TRANG TIẾP THEO --- */
+.next-page-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
+    padding-bottom: 2rem;
+}
+
+.btn-next-page {
+    padding: 12px 30px;
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--champagne-white);
+    background: rgba(255, 99, 184, 0.2);
+    border: 1px solid var(--galaxy-pink);
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 5px 15px rgba(255, 99, 184, 0.2);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.btn-next-page:hover {
+    background: var(--galaxy-pink);
+    color: var(--cosmic-plum);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(255, 99, 184, 0.5);
+}
+
+/* Ẩn nút khi đang xem phim (tắt đèn) */
+body[data-cinema-focus="true"] .btn-next-page {
+    opacity: 0;
+    pointer-events: none;
+}

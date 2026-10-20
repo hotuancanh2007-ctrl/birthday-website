@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="description" content="A special birthday gift — an interactive 3D birthday experience." />
+  <title>A Special Birthday Gift 🎀</title>
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23e07a96'><path d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/></svg>" />
+  <link rel="stylesheet" href="./src/styles/main.css" />
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.10.2/dist/full.min.css" rel="stylesheet" type="text/css" />
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.10.2/dist/full.min.css" rel="stylesheet" type="text/css" />
+
+
+</head>
+
+<body data-stage="loading">
+  <div id="loading-screen">
+    <div class="loader-atmosphere" aria-hidden="true">
+      <span class="loader-cloud loader-cloud-a"></span>
+      <span class="loader-cloud loader-cloud-b"></span>
+      <span class="loader-cloud loader-cloud-c"></span>
+      <span class="loader-spark">✦</span>
+      <span class="loader-spark">✧</span>
+      <span class="loader-spark">♡</span>
+    </div>
+    <div class="loader-orb">
+      <div class="loader-crown">🎀</div>
+    </div>
+    <div class="loader-text">Đang chuẩn bị điều đặc biệt dành cho em...</div>
+    <div class="loader-dots" aria-hidden="true">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+
+  <div id="app">
+    <canvas id="webgl-canvas"></canvas>
+    <div id="cinematic-flash"></div>
+    <div id="magic-burst" aria-hidden="true"></div>
+    <div class="ui-overlay" id="ui-container"></div>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tailwind & DaisyUI -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Thư viện Canvas Confetti (Hiệu ứng nổ pháo giấy siêu mượt) -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            'vibes': ['"Great Vibes"', 'cursive'],
+            'playfair': ['"Playfair Display"', 'serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            'vibes': ['"Great Vibes"', 'cursive'],
+            'playfair': ['"Playfair Display"', 'serif'],
+          }
+        }
+      }
+    }
+  </script>
+</body>
+
+</html>
