@@ -522,9 +522,7 @@ export class LetterScreen {
       } else {
         html += `
           <button class="btn-continue-journey" id="btn-continue-journey" style="padding: 0.85rem 2rem; font-size: 0.85rem;" aria-label="${continueText}">
-            <span aria-hidden="true">✨</span>
             <span>${continueText}</span>
-            <span aria-hidden="true">✨</span>
           </button>
         `;
       }

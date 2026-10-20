@@ -43,6 +43,10 @@ export class CakeScreen {
         this.flowers = [];
         this.butterflies = [];
 
+        // Mảng chứa các phần tử bay mới
+        this.floatingCats = [];
+        this.floatingFlowers = [];
+
         this.ambientParticles = null;
     }
 
@@ -74,7 +78,7 @@ export class CakeScreen {
                     <button class="btn btn-secondary glass btn-md md:btn-lg px-6 md:px-8 rounded-full shadow-2xl font-playfair hover:scale-110 hover:shadow-[0_0_25px_rgba(255,182,193,0.8)] transition-all duration-300 bg-white/50 text-rose-800 border-pink-200" id="btn-light-candle">
                         Thổi Nến Nha Meo 🕯️
                     </button>
-                    <div class="font-vibes text-4xl md:text-6xl text-center text-rose-900 drop-shadow-[0_2px_4px_rgba(255,255,255,0.8)] mt-6 hidden opacity-0 transition-opacity duration-1000 px-2" id="cake-wish">
+                    <div class="font-vibes text-4xl md:text-6xl text-center text-rose-900 drop-shadow-[0_2px_4px_rgba(0,0,0,0)] mt-6 hidden opacity-0 transition-opacity duration-1000 px-2" id="cake-wish">
                         Bé Cầu Nguyện i 🕯️
                     </div>
                 </div>
@@ -121,9 +125,9 @@ export class CakeScreen {
         const isMobile = w < 768;
 
         this.scene = new THREE.Scene();
-        // Background pastel đầm ấm như LetterScreen
-        this.scene.background = new THREE.Color(0xfff0f5);
-        this.scene.fog = new THREE.FogExp2(0xffe4e1, 0.012);
+        // Background pastel nhưng trầm hơn (#d8a7b1) để tôn bật ánh sáng bánh kem
+        this.scene.background = new THREE.Color('#d8a7b1');
+        this.scene.fog = new THREE.FogExp2('#d8a7b1', 0.015);
 
         this.camera = new THREE.PerspectiveCamera(isMobile ? 65 : 45, w / h, 0.1, 100);
         this.camera.position.copy(this.cameraBasePos);
@@ -170,7 +174,6 @@ export class CakeScreen {
         this.handleRender();
     }
 
-    // Tạo bụi sao hạt pastel giống hệt LetterScreen
     createFairyDust() {
         const isMobile = window.innerWidth < 768;
         const particleCount = isMobile ? 60 : 120;
@@ -233,13 +236,14 @@ export class CakeScreen {
     }
 
     setupLighting() {
-        this.lights.ambient = new THREE.AmbientLight(0xfff0f5, 1.2);
+        // Giảm nhẹ cường độ đèn nền để làm sáng bánh kem hơn
+        this.lights.ambient = new THREE.AmbientLight(0xfff0f5, 0.8);
         this.scene.add(this.lights.ambient);
 
-        this.lights.hemi = new THREE.HemisphereLight(0xffeeb1, 0xFFC0CB, 0.6);
+        this.lights.hemi = new THREE.HemisphereLight(0xffeeb1, 0xFFC0CB, 0.4);
         this.scene.add(this.lights.hemi);
 
-        this.lights.dirLight = new THREE.DirectionalLight(0xffb6c1, 1.5);
+        this.lights.dirLight = new THREE.DirectionalLight(0xffb6c1, 1.2);
         this.lights.dirLight.position.set(5, 10, 7);
         this.lights.dirLight.castShadow = true;
         this.lights.dirLight.shadow.mapSize.width = 1024;
@@ -334,9 +338,104 @@ export class CakeScreen {
     }
 
     buildGarden() {
-        this.createCats();
-        this.createFloatingHearts();
-        this.createFloralArrangements();
+        this.createCats(); // Mèo dưới sàn
+        this.createFloatingHearts(); // Trái tim bay
+        this.createFloralArrangements(); // Hoa dưới sàn
+
+        // Thêm hiệu ứng bay mới
+        this.createFloatingFlowers();
+        this.createFloatingCats();
+    }
+
+    // Tạo hoa bay bồng bềnh
+    createFloatingFlowers() {
+        const petalGeo = new THREE.SphereGeometry(0.15, 8, 8);
+        const centerGeo = new THREE.SphereGeometry(0.1, 8, 8);
+
+        const flowerMaterials = [
+            new THREE.MeshStandardMaterial({ color: 0xff69b4, roughness: 0.4 }),
+            new THREE.MeshStandardMaterial({ color: 0xffb6c1, roughness: 0.4 }),
+            new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 })
+        ];
+        const centerMat = new THREE.MeshStandardMaterial({ color: 0xffd700, roughness: 0.5 });
+
+        const fCount = 15;
+        for (let i = 0; i < fCount; i++) {
+            const flower = new THREE.Group();
+            const mat = flowerMaterials[i % flowerMaterials.length];
+
+            // Xếp 5 cánh hoa
+            for (let p = 0; p < 5; p++) {
+                const petal = new THREE.Mesh(petalGeo, mat);
+                const angle = (p / 5) * Math.PI * 2;
+                petal.position.set(Math.cos(angle) * 0.15, 0, Math.sin(angle) * 0.15);
+                petal.scale.set(1, 0.3, 1);
+                flower.add(petal);
+            }
+            const center = new THREE.Mesh(centerGeo, centerMat);
+            flower.add(center);
+
+            flower.position.set((Math.random() - 0.5) * 40, Math.random() * 20 - 5, (Math.random() - 0.5) * 30 - 10);
+            const scale = 0.5 + Math.random() * 0.8;
+            flower.scale.setScalar(scale);
+
+            flower.userData = {
+                speedY: Math.random() * 0.015 + 0.005,
+                rotSpeedX: (Math.random() - 0.5) * 0.02,
+                rotSpeedY: (Math.random() - 0.5) * 0.02,
+                rotSpeedZ: (Math.random() - 0.5) * 0.02
+            };
+
+            this.gardenGroup.add(flower);
+            this.floatingFlowers.push(flower);
+        }
+    }
+
+    // Tạo mèo con bay lơ lửng
+    createFloatingCats() {
+        const createFloatCat = (color) => {
+            const cat = new THREE.Group();
+            const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.9 });
+            const darkMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.5 });
+            const pinkMat = new THREE.MeshStandardMaterial({ color: 0xFF9AAB, roughness: 0.4 });
+
+            // Đầu mèo
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.8, 32, 32), mat);
+            const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), darkMat);
+            eyeL.position.set(-0.3, 0.1, 0.75);
+            const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), darkMat);
+            eyeR.position.set(0.3, 0.1, 0.75);
+            const nose = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), pinkMat);
+            nose.position.set(0, -0.05, 0.8);
+
+            const earGeo = new THREE.ConeGeometry(0.25, 0.5, 8);
+            const earL = new THREE.Mesh(earGeo, mat);
+            earL.position.set(-0.4, 0.7, 0.2);
+            earL.rotation.set(-0.2, 0, 0.4);
+            const earR = new THREE.Mesh(earGeo, mat);
+            earR.position.set(0.4, 0.7, 0.2);
+            earR.rotation.set(-0.2, 0, -0.4);
+
+            cat.add(head, eyeL, eyeR, nose, earL, earR);
+
+            cat.position.set((Math.random() - 0.5) * 35, Math.random() * 15 + 2, (Math.random() - 0.5) * 25 - 5);
+            cat.scale.setScalar(0.5 + Math.random() * 0.3);
+
+            cat.userData = {
+                speedY: Math.random() * 0.01 + 0.005,
+                speedX: (Math.random() - 0.5) * 0.01,
+                wobbleSpeed: Math.random() * 0.05 + 0.02,
+                wobbleOffset: Math.random() * Math.PI * 2
+            };
+
+            this.gardenGroup.add(cat);
+            this.floatingCats.push(cat);
+        };
+
+        const colors = [0xFFFFFF, 0xFFE4B5, 0xFFDAB9, 0xFFB6C1];
+        for (let i = 0; i < 8; i++) {
+            createFloatCat(colors[i % colors.length]);
+        }
     }
 
     createCats() {
@@ -387,7 +486,6 @@ export class CakeScreen {
         createCat(0xFFDAB9, -4, -6, 0.3);
     }
 
-    // Tạo hình trái tim 3D mềm mại giống LetterScreen
     createFloatingHearts() {
         const shape = new THREE.Shape();
         const x = 0, y = 0;
@@ -601,11 +699,13 @@ export class CakeScreen {
             this.lights.candleLight.intensity = 10 + Math.sin(time * 15) * 1.5;
         }
 
+        // Animate mèo nằm đất
         this.cats.forEach(cat => {
             cat.position.y = -1.5 + Math.sin(time * 2 + cat.userData.offset) * 0.04;
             cat.userData.tail.rotation.z = Math.sin(time * 3 + cat.userData.offset) * 0.2;
         });
 
+        // Animate tim bay
         this.hearts.forEach(heart => {
             heart.position.y += heart.userData.speedY;
             heart.rotation.x += heart.userData.rotSpeedX;
@@ -613,6 +713,28 @@ export class CakeScreen {
             if (heart.position.y > 15) heart.position.y = -5;
         });
 
+        // Animate hoa bay
+        this.floatingFlowers.forEach(flower => {
+            flower.position.y += flower.userData.speedY;
+            flower.rotation.x += flower.userData.rotSpeedX;
+            flower.rotation.y += flower.userData.rotSpeedY;
+            flower.rotation.z += flower.userData.rotSpeedZ;
+            if (flower.position.y > 20) flower.position.y = -5;
+        });
+
+        // Animate mèo con lơ lửng
+        this.floatingCats.forEach(cat => {
+            cat.position.y += cat.userData.speedY + Math.sin(time * cat.userData.wobbleSpeed + cat.userData.wobbleOffset) * 0.01;
+            cat.position.x += cat.userData.speedX;
+            cat.rotation.y = Math.sin(time * cat.userData.wobbleSpeed + cat.userData.wobbleOffset) * 0.2;
+            cat.rotation.z = Math.cos(time * cat.userData.wobbleSpeed + cat.userData.wobbleOffset) * 0.1;
+            if (cat.position.y > 20) {
+                cat.position.y = -5;
+                cat.position.x = (Math.random() - 0.5) * 35;
+            }
+        });
+
+        // Animate hoa nằm đất
         this.flowers.forEach(flower => {
             flower.rotation.x = Math.sin(time * 1.2 + flower.userData.offset) * 0.05;
             flower.rotation.z = Math.cos(time * 1.1 + flower.userData.offset) * 0.05;

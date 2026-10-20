@@ -18,11 +18,25 @@ let cakeScreen = null;
 let giftScene = null;
 let letterScreen = null;
 let galaxyScreen = null;
-// Thay TimelineScreen bằng VideoAnniversary
 let videoScreen = null;
 
 function setStage(name) {
   document.body.dataset.stage = name;
+}
+
+// Lắng nghe sự kiện thay đổi kích thước toàn cục (Resize & Orientation)
+function handleGlobalResize() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+
+  // Cập nhật kích thước Canvas WebGL GiftScene nếu đang hoạt động
+  if (canvas && giftScene && document.body.dataset.stage === 'gift') {
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
+    if (giftScene.onWindowResize) {
+      giftScene.onWindowResize();
+    }
+  }
 }
 
 function initGiftScene() {
@@ -118,7 +132,6 @@ function transitionToGalaxyScreen() {
         letterScreen.destroy();
         letterScreen = null;
       }
-      // Dọn dẹp videoScreen nếu người dùng quay lại
       if (videoScreen) {
         videoScreen.destroy();
         videoScreen = null;
@@ -147,9 +160,8 @@ function handleGalaxyContinue() {
         galaxyScreen = null;
       }
 
-      setStage('video-cinema'); // Cập nhật stage thành tên mới cho phù hợp
+      setStage('video-cinema');
 
-      // Khởi tạo VideoAnniversary thay vì TimelineScreen
       videoScreen = new VideoAnniversary();
       videoScreen.mount(appContainer);
 
@@ -168,8 +180,8 @@ function handleReplayAll() {
     onComplete: () => {
       if (letterScreen) { letterScreen.destroy(); letterScreen = null; }
       if (galaxyScreen) { galaxyScreen.destroy(); galaxyScreen = null; }
-      // Phá hủy VideoAnniversary khi replay
       if (videoScreen) { videoScreen.destroy(); videoScreen = null; }
+      if (cakeScreen) { cakeScreen.destroy(); cakeScreen = null; }
 
       setStage('gift');
       if (canvas) canvas.style.display = 'block';
@@ -209,11 +221,13 @@ function revealUIWithLanding() {
     });
   }
 }
+
 window.addEventListener('change-screen', (e) => {
-  if (e.detail && e.detail.screen === 'final-message') { // hoặc 'cake-screen' tùy bạn định nghĩa
+  if (e.detail && e.detail.screen === 'final-message') {
     transitionToCakeScreen();
   }
 });
+
 function transitionToCakeScreen() {
   const flash = document.getElementById('cinematic-flash');
 
@@ -222,7 +236,6 @@ function transitionToCakeScreen() {
     duration: 0.45,
     ease: 'power2.in',
     onComplete: () => {
-      // Dọn dẹp videoScreen
       if (videoScreen) {
         videoScreen.destroy();
         videoScreen = null;
@@ -230,24 +243,25 @@ function transitionToCakeScreen() {
 
       setStage('cake-ceremony');
 
-      // Khởi tạo CakeScreen
       cakeScreen = new CakeScreen(appContainer, {
         onComplete: () => {
-          console.log("Xong màn bánh kem, chuyển màn cuối...");
-          // Gọi hàm chuyển màn hình cuối tại đây
+          handleReplayAll();
         }
       });
       cakeScreen.mount();
 
-      // Mở màn
       gsap.to(flash, { opacity: 0, duration: 0.8, ease: 'power2.out' });
     },
   });
 }
+
 window.addEventListener('DOMContentLoaded', () => {
   setStage('gift');
   initGiftScene();
   renderGiftUI();
+
+  window.addEventListener('resize', handleGlobalResize);
+  window.addEventListener('orientationchange', handleGlobalResize);
 
   window.setTimeout(() => {
     if (loadingScreen) {
