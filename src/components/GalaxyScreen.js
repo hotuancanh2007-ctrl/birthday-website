@@ -68,20 +68,26 @@ export class GalaxyScreen {
     this.element = document.createElement('div');
     this.element.id = 'screen-galaxy';
 
+    // Đảm bảo tràn màn hình hoàn toàn trên Safari iOS
+    this.element.style.position = 'fixed';
+    this.element.style.top = '0';
+    this.element.style.left = '0';
+    this.element.style.width = '100vw';
+    this.element.style.height = '100vh'; // Fallback trình duyệt cũ
+    this.element.style.height = '100dvh'; // Chuẩn mới cho Safari iOS
+    this.element.style.overflow = 'hidden';
+    this.element.style.zIndex = '10';
+
     this.element.innerHTML = `
       <canvas id="galaxy-canvas" aria-label="Thiên hà kỷ niệm 3D"></canvas>
       <div class="galaxy-dust" aria-hidden="true"></div>
       <div class="galaxy-hud">
-        <div class="galaxy-badge">✦ GALAXY OF MEMORIES ✦</div>
-        <h2 class="galaxy-title">Thiên Hà Kỷ Niệm</h2>
-        <p class="galaxy-subtitle">Chạm vào từng tấm ảnh để sống lại kỷ niệm ♡</p>
+        <h2 class="galaxy-title">Thiên Hà Kỷ Niệm♡♡♡</h2>
       </div>
       <div class="galaxy-hint">
-        <p class="galaxy-hint-text">✦ Kéo chuột để khám phá không gian · Chạm Polaroid để xem ♡</p>
         <button class="btn-galaxy-continue" id="btn-galaxy-continue" aria-label="Tiếp tục hành trình">
           <span aria-hidden="true">🌌</span>
           <span>Tiếp tục hành trình ♡</span>
-          <span aria-hidden="true">✨</span>
         </button>
       </div>
       <div class="galaxy-modal-overlay" id="galaxy-modal-overlay" role="dialog" aria-modal="true" aria-label="Chi tiết kỷ niệm">
@@ -123,13 +129,15 @@ export class GalaxyScreen {
 
   _initThree() {
     const canvas = this.element.querySelector('#galaxy-canvas');
-    const w = window.innerWidth;
-    const h = window.innerHeight;
+
+    // Lấy chiều rộng/cao thực tế từ container đã định dạng dvh
+    const w = this.element.clientWidth || window.innerWidth;
+    const h = this.element.clientHeight || window.innerHeight;
 
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
     this.renderer.setSize(w, h);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    this.renderer.setClearColor(0x05020a, 1); // Deep cosmic void
+    this.renderer.setClearColor(0x05020a, 1);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.15;
@@ -150,8 +158,6 @@ export class GalaxyScreen {
   }
 
   _buildMultiLayerCosmos() {
-    const textureLoader = new THREE.TextureLoader();
-
     // Deep static stars
     const starGeo = new THREE.BufferGeometry();
     const starCount = 2500;
@@ -286,7 +292,6 @@ export class GalaxyScreen {
     const CARD_W = 3.2;
     const CARD_H = 3.9;
 
-    // Deep, cinematic spatial arrangement
     const positions = [
       { x: -7.5, y: 1.5, z: -4.0, ry: 0.35, rx: -0.05 },
       { x: -3.5, y: -2.0, z: 1.5, ry: 0.15, rx: 0.08 },
@@ -320,7 +325,6 @@ export class GalaxyScreen {
       this.polaroids.push(cardGroup);
       this.scene.add(cardGroup);
 
-      // Entrance animation
       const origZ = cardGroup.position.z;
       cardGroup.position.z = origZ - 20;
       cardGroup.scale.set(0.01, 0.01, 0.01);
@@ -336,7 +340,6 @@ export class GalaxyScreen {
     cvs.height = 640;
     const ctx = cvs.getContext('2d');
 
-    // Premium Ivory Frame
     const rr = 12;
     ctx.fillStyle = '#fcfbfa';
     this._roundRect(ctx, 0, 0, 512, 640, rr);
@@ -345,7 +348,6 @@ export class GalaxyScreen {
     ctx.fill();
     ctx.shadowColor = 'transparent';
 
-    // Photo area placeholder
     const photoH = 410;
     const margin = 24;
     const gradients = [
@@ -363,14 +365,12 @@ export class GalaxyScreen {
     this._roundRect(ctx, margin, margin, 512 - margin * 2, photoH, 6);
     ctx.fill();
 
-    // Embellishments
     ctx.font = 'bold 80px serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     const icons = ['🌸', '✨', '💖', '🦋', '💌'];
     ctx.fillText(icons[idx % icons.length], 256, margin + photoH / 2);
 
-    // Typography
     ctx.fillStyle = '#1e112a';
     ctx.font = 'bold 26px "Playfair Display", Georgia, serif';
     ctx.textAlign = 'center';
@@ -394,7 +394,6 @@ export class GalaxyScreen {
     const mesh = new THREE.Mesh(geo, mat);
     this.disposables.push(tex, geo, mat);
 
-    // Elegant Luminous Outer Glow
     const glowGeo = new THREE.PlaneGeometry(w + 0.3, h + 0.3);
     const glowMat = new THREE.MeshBasicMaterial({
       color: 0xedc4ff, transparent: true, opacity: 0.0,
@@ -467,7 +466,6 @@ export class GalaxyScreen {
     this.cameraPitch += (this.targetPitch - this.cameraPitch) * cameraSmoothness;
     this.cameraDistance += (this.targetDistance - this.cameraDistance) * cameraSmoothness;
 
-    // Gentle vertical float for the camera center
     this.cameraTarget.y = Math.sin(elapsed * 0.3) * 0.8;
 
     const cosPitch = Math.cos(this.cameraPitch);
@@ -486,7 +484,6 @@ export class GalaxyScreen {
       neb.rotation.z += 0.02 * delta * (i % 2 === 0 ? 1 : -1);
     });
 
-    // Animate Hearts
     const dummy = new THREE.Object3D();
     if (this.hearts) {
       for (let i = 0; i < this.heartData.length; i++) {
@@ -502,7 +499,6 @@ export class GalaxyScreen {
       this.hearts.instanceMatrix.needsUpdate = true;
     }
 
-    // Animate Petals
     if (this.petals) {
       for (let i = 0; i < this.petalData.length; i++) {
         let pd = this.petalData[i];
@@ -518,7 +514,6 @@ export class GalaxyScreen {
       this.petals.instanceMatrix.needsUpdate = true;
     }
 
-    // Floating Polaroids
     this.polaroids.forEach((cardGroup) => {
       const { baseY, baseZ, floatPhase, floatSpeed } = cardGroup.userData;
       if (this.hoveredIdx !== cardGroup.userData.memoryIdx) {
@@ -538,7 +533,6 @@ export class GalaxyScreen {
 
   _detectHover() {
     this.raycaster.setFromCamera(this.ndcMouse, this.camera);
-    // Raycast against the meshes inside the groups
     const meshes = this.polaroids.map(p => p.userData.cardMesh);
     const hits = this.raycaster.intersectObjects(meshes, false);
 
@@ -561,7 +555,7 @@ export class GalaxyScreen {
       });
       if (isHovered) {
         gsap.to(cardGroup.rotation, {
-          x: cardGroup.userData.baseRy * 0.2, // Slightly face camera
+          x: cardGroup.userData.baseRy * 0.2,
           duration: 0.5, ease: 'power3.out', overwrite: 'auto'
         });
       } else {
@@ -694,9 +688,13 @@ export class GalaxyScreen {
     if (e.key === 'Escape') this._closeModal();
   }
 
+  // Tối ưu lại _onResize duy nhất và chính xác cho Safari
   _onResize() {
-    if (!this.renderer || !this.camera) return;
-    const w = window.innerWidth; const h = window.innerHeight;
+    if (!this.renderer || !this.camera || !this.element) return;
+
+    const w = this.element.clientWidth || window.innerWidth;
+    const h = this.element.clientHeight || window.innerHeight;
+
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(w, h);

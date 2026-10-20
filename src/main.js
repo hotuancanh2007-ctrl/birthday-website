@@ -50,16 +50,15 @@ function renderGiftUI() {
       <span class="twinkle t3">♡</span>
     </div>
     <header class="gift-header" id="gift-header" style="opacity: 0;">
-      <div class="gift-badge">✦ FOR MY BELOVED ✦</div>
+      <div class="gift-badge"> Meoooooooo </div>
       <h1 class="gift-subtitle">${birthdayData.giftScene.subtitle}</h1>
       <span class="gift-recipient-tag">${birthdayData.recipient.nickname}</span>
     </header>
     <footer class="gift-footer" id="gift-footer" style="opacity: 0;">
-      <button class="btn-open-gift interactive-ui" id="btn-open-gift" aria-label="Chạm vào hộp quà để mở">
-        <span class="btn-sparkle">✨</span>
+      <button class="btn-open-gift interactive-ui" id="btn-open-gift" aria-label="Chạm vào hộp quà để mở♡♡♡">
+        <span class="btn-sparkle"></span>
         <span class="btn-text">${birthdayData.giftScene.openButtonText}</span>
       </button>
-      <div class="gift-hint-text">Chạm vào hộp quà để mở • Giữ và kéo để xoay ♡</div>
     </footer>
   `;
 

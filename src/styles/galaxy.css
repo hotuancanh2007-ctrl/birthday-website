@@ -270,3 +270,19 @@
   letter-spacing: 2px;
   color: rgba(255, 255, 255, 0.4);
 }
+
+#screen-galaxy {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+#galaxy-canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}

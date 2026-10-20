@@ -13,6 +13,7 @@ export class VideoAnniversary {
         this.currentIndex = 0;
         this.isOpen = false;
         this.boundKeyHandler = this.handleKeyPress.bind(this);
+        this.boundResizeHandler = this.onWindowResize.bind(this);
         this.animationFrameId = null;
         this.prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -33,17 +34,27 @@ export class VideoAnniversary {
     mount(parentContainer) {
         this.container = document.createElement('div');
         this.container.id = 'video-anniversary-container';
+
+        // Tối ưu Responsive Fullscreen cho Safari iOS & Mobile Browsers
+        this.container.style.position = 'fixed';
+        this.container.style.top = '0';
+        this.container.style.left = '0';
+        this.container.style.width = '100vw';
+        this.container.style.height = '100vh';  // Fallback cho trình duyệt cũ
+        this.container.style.height = '100dvh'; // Dynamic Viewport Height chuẩn Safari
+        this.container.style.overflow = 'hidden';
+        this.container.style.zIndex = '10';
+
         this.backBtn = new BackButton(this.container, {
-            variant: 'cinema', // Kiểu tối màu hợp với rạp chiếu phim
+            variant: 'cinema',
             position: 'top-left',
             label: 'Thiên hà',
             onClick: () => {
-                // Logic quay lại màn hình Galaxy
                 this.destroy();
-                // Gọi hàm chuyển về màn hình Galaxy ở main.js
             }
         });
         this.backBtn.mount();
+
         const svgCatSleeping = `
       <svg viewBox="0 0 100 50" xmlns="http://www.w3.org/2000/svg">
         <path d="M 80 40 Q 95 40 95 25 Q 95 15 85 20" fill="none" stroke="#FFF5FC" stroke-width="8" stroke-linecap="round"/>
@@ -71,7 +82,7 @@ export class VideoAnniversary {
     `;
 
         this.container.innerHTML = `
-      <div id="three-canvas-container"></div>
+      <div id="three-canvas-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></div>
       <div class="cinema-dim-overlay"></div>
       
       <div class="cinema-intro-overlay">
@@ -96,28 +107,16 @@ export class VideoAnniversary {
               <p id="video-date">Ngày kỷ niệm</p>
             </div>
             <div class="cinema-nav-controls">
-              <button class="cinema-nav-btn" id="btn-prev-video">❮</button>
-              <button class="cinema-nav-btn" id="btn-next-video">❯</button>
+              <button class="cinema-nav-btn" id="btn-prev-video" aria-label="Video trước">❮</button>
+              <button class="cinema-nav-btn" id="btn-next-video" aria-label="Video tiếp">❯</button>
             </div>
           </div>
           <div class="video-gallery-wrapper">
             <div class="video-gallery-track" id="gallery-track"></div>
           </div>
-          <div class="cinema-ui-layer">
-          <div class="cat-peeking">${svgCatPeeking}</div>
-          <div class="cinema-details-bar">
-            <!-- ... (giữ nguyên code cũ) ... -->
-          </div>
-          <div class="video-gallery-wrapper">
-            <div class="video-gallery-track" id="gallery-track"></div>
-          </div>
-          
-          <!-- THÊM NÚT QUA TRANG Ở ĐÂY -->
           <div class="next-page-container">
              <button class="btn-next-page" id="btn-next-page">Tới Phần Tiếp Theo ✨</button>
           </div>
-          
-        </div>
         </div>
       </div>
     `;
@@ -130,35 +129,22 @@ export class VideoAnniversary {
 
         if (this.videos.length > 0) this.loadVideo(0);
     }
+
     handleVideoEnded() {
-        // Chỉ tự động chuyển nếu đây là video cuối cùng (tuỳ chọn)
-        // if (this.currentIndex !== this.videos.length - 1) return;
-
-        // 1. Dừng mọi tương tác để tránh lỗi
         this.isOpen = false;
-
-        // 2. Tạo hiệu ứng mờ dần toàn bộ rạp phim ra màu đen hoặc màn hình trống
         gsap.to(this.container, {
             opacity: 0,
             duration: 1.5,
             ease: 'power2.inOut',
             onComplete: () => {
-                // 3. THỰC HIỆN ĐIỀU HƯỚNG TẠI ĐÂY (Chọn 1 trong 2 cách tuỳ theo kiến trúc project của bạn)
-
-                // CÁCH 1: Nếu project của bạn chuyển trang bằng file HTML thông thường
-                // window.location.href = 'loi-nhan-cuoi.html'; // Đổi đường dẫn thành trang tiếp theo của bạn
-
-                // CÁCH 2: Nếu project của bạn là Single Page Application (chuyển màn theo Event)
-                // Theo cấu trúc birthdayData, màn tiếp theo có thể là Final Message[cite: 1]
                 window.dispatchEvent(new CustomEvent('change-screen', {
                     detail: { screen: 'final-message' }
                 }));
-
-                // Gọi hàm destroy để dọn dẹp bộ nhớ Three.js và Video
                 this.destroy();
             }
         });
     }
+
     initDOM() {
         this.introOverlay = this.container.querySelector('.cinema-intro-overlay');
         this.btnOpen = this.container.querySelector('#btn-open-cinema');
@@ -174,8 +160,8 @@ export class VideoAnniversary {
     }
 
     initThreeJS() {
-        const w = window.innerWidth;
-        const h = window.innerHeight;
+        const w = this.container.clientWidth || window.innerWidth;
+        const h = this.container.clientHeight || window.innerHeight;
 
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0x2a1625);
@@ -188,10 +174,11 @@ export class VideoAnniversary {
         this.renderer.setSize(w, h);
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         this.threeContainer.appendChild(this.renderer.domElement);
+
         this.lights.ambient = new THREE.AmbientLight(0xffffff, 0.8);
         this.scene.add(this.lights.ambient);
 
-        this.lights.mainSpot = new THREE.SpotLight(0xffe6f2, 2.0); // Soft pinkish spotlight
+        this.lights.mainSpot = new THREE.SpotLight(0xffe6f2, 2.0);
         this.lights.mainSpot.position.set(0, 30, 25);
         this.scene.add(this.lights.mainSpot);
 
@@ -199,17 +186,17 @@ export class VideoAnniversary {
         this.lights.sidePink.position.set(-20, 0, 15);
         this.scene.add(this.lights.sidePink);
 
-        // CREATE GALAXY PARTICLES
+        // GALAXY PARTICLES
         const particleCount = 2500;
         const geometry = new THREE.BufferGeometry();
         const positions = new Float32Array(particleCount * 3);
         const colors = new Float32Array(particleCount * 3);
 
         const colorPalette = [
-            new THREE.Color(0xFF63B8), // Galaxy pink
-            new THREE.Color(0xBCA7FF), // Lavender
-            new THREE.Color(0xFFD6EB), // Pastel pink
-            new THREE.Color(0xFFF5FC)  // Champagne white
+            new THREE.Color(0xFF63B8),
+            new THREE.Color(0xBCA7FF),
+            new THREE.Color(0xFFD6EB),
+            new THREE.Color(0xFFF5FC)
         ];
 
         for (let i = 0; i < particleCount; i++) {
@@ -237,9 +224,9 @@ export class VideoAnniversary {
         this.galaxyParticles = new THREE.Points(geometry, material);
         this.scene.add(this.galaxyParticles);
 
-        // CREATE VELVET CURTAINS
+        // VELVET CURTAINS
         const silkMaterial = new THREE.MeshPhysicalMaterial({
-            color: 0xb04a73, // Rose Velvet
+            color: 0xb04a73,
             emissive: 0x3d1b2d,
             roughness: 0.5,
             metalness: 0.2,
@@ -263,26 +250,25 @@ export class VideoAnniversary {
         this.scene.add(this.curtainLeft);
         this.scene.add(this.curtainRight);
 
-        window.addEventListener('resize', this.onWindowResize.bind(this));
         this.renderThreeJS();
     }
 
     renderThreeJS() {
         this.animationFrameId = requestAnimationFrame(this.renderThreeJS.bind(this));
-        // Slow down time for reduced motion users
         const time = this.clock.getElapsedTime() * (this.prefersReducedMotion ? 0.05 : 1);
         const progress = this.curtainProgress.value;
 
-        // Animate Galaxy
         if (this.galaxyParticles && !this.prefersReducedMotion) {
             this.galaxyParticles.rotation.y = time * 0.02;
             this.galaxyParticles.rotation.z = time * 0.01;
         }
 
-        this.updateCurtainGeometry(this.curtainLeft.geometry, this.basePosLeft, time, progress, -1);
-        this.updateCurtainGeometry(this.curtainRight.geometry, this.basePosRight, time, progress, 1);
+        if (this.curtainLeft && this.curtainRight) {
+            this.updateCurtainGeometry(this.curtainLeft.geometry, this.basePosLeft, time, progress, -1);
+            this.updateCurtainGeometry(this.curtainRight.geometry, this.basePosRight, time, progress, 1);
+        }
 
-        if (!this.prefersReducedMotion) {
+        if (!this.prefersReducedMotion && this.lights.mainSpot) {
             this.lights.mainSpot.position.x = Math.sin(time * 0.5) * 5;
         }
 
@@ -311,35 +297,29 @@ export class VideoAnniversary {
     }
 
     onWindowResize() {
-        if (!this.camera || !this.renderer) return;
-        this.camera.aspect = window.innerWidth / window.innerHeight;
+        if (!this.camera || !this.renderer || !this.container) return;
+        const w = this.container.clientWidth || window.innerWidth;
+        const h = this.container.clientHeight || window.innerHeight;
+
+        this.camera.aspect = w / h;
         this.camera.updateProjectionMatrix();
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setSize(w, h);
     }
+
     goToNextScreen() {
-        // Ngăn click nhiều lần
         if (!this.isOpen) return;
         this.isOpen = false;
 
-        // Dừng video nếu đang phát
         if (this.mainVideo) this.mainVideo.pause();
 
-        // Hiệu ứng mờ dần toàn bộ rạp phim rồi mới chuyển trang
         gsap.to(this.container, {
             opacity: 0,
             duration: 1.2,
             ease: 'power2.inOut',
             onComplete: () => {
-                // ĐIỀU HƯỚNG TẠI ĐÂY (chọn 1 trong 2 cách)
-
-                // Cách 1: Chuyển bằng link HTML tĩnh
-                // window.location.href = 'trang-tiep-theo.html';
-
-                // Cách 2: Chuyển bằng Event (SPA)
                 window.dispatchEvent(new CustomEvent('change-screen', {
                     detail: { screen: 'final-message' }
                 }));
-
                 this.destroy();
             }
         });
@@ -349,17 +329,20 @@ export class VideoAnniversary {
         if (this.btnOpen) this.btnOpen.addEventListener('click', () => this.playOpeningSequence());
         if (this.btnPrev) this.btnPrev.addEventListener('click', () => this.navigateVideo(-1));
         if (this.btnNext) this.btnNext.addEventListener('click', () => this.navigateVideo(1));
-        if (this.btnNextPage) {
-            this.btnNextPage.addEventListener('click', () => this.goToNextScreen());
-        }
-        window.addEventListener('keydown', this.boundKeyHandler);
+        if (this.btnNextPage) this.btnNextPage.addEventListener('click', () => this.goToNextScreen());
 
-        this.mainVideo.addEventListener('play', () => this.toggleCinemaFocus(true));
-        this.mainVideo.addEventListener('pause', () => this.toggleCinemaFocus(false));
-        this.mainVideo.addEventListener('ended', () => {
-            this.toggleCinemaFocus(false);
-            this.handleVideoEnded(); // Gọi hàm chuyển trang khi hết video
-        });
+        window.addEventListener('keydown', this.boundKeyHandler);
+        window.addEventListener('resize', this.boundResizeHandler);
+        window.addEventListener('orientationchange', this.boundResizeHandler);
+
+        if (this.mainVideo) {
+            this.mainVideo.addEventListener('play', () => this.toggleCinemaFocus(true));
+            this.mainVideo.addEventListener('pause', () => this.toggleCinemaFocus(false));
+            this.mainVideo.addEventListener('ended', () => {
+                this.toggleCinemaFocus(false);
+                this.handleVideoEnded();
+            });
+        }
     }
 
     toggleCinemaFocus(isFocused) {
@@ -391,7 +374,6 @@ export class VideoAnniversary {
 
         const tl = gsap.timeline();
 
-        // Accessible Crossfade vs Dramatic Zoom
         tl.to(this.introOverlay, {
             opacity: 0,
             scale: this.prefersReducedMotion ? 1 : 1.1,
@@ -427,7 +409,6 @@ export class VideoAnniversary {
         }, this.prefersReducedMotion ? "-=0.5" : "-=1.5");
     }
 
-
     renderGallery() {
         if (!this.galleryTrack) return;
         this.galleryTrack.innerHTML = '';
@@ -437,7 +418,7 @@ export class VideoAnniversary {
             const item = document.createElement('div');
             item.className = `gallery-item ${index === 0 ? 'active' : ''}`;
             item.innerHTML = `
-        <img src="${vid.poster || ''}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'100%\\' height=\\'100%\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%2324112F\\'/></svg>'"/>
+        <img src="${vid.poster || ''}" alt="${vid.title || ''}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'100%\\' height=\\'100%\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%2324112F\\'/></svg>'"/>
         <div class="gallery-item-info">${vid.title || 'Kỷ niệm ' + (index + 1)}</div>
       `;
             item.addEventListener('click', () => this.loadVideo(index));
@@ -483,26 +464,39 @@ export class VideoAnniversary {
 
     destroy() {
         window.removeEventListener('keydown', this.boundKeyHandler);
-        window.removeEventListener('resize', this.onWindowResize.bind(this));
+        window.removeEventListener('resize', this.boundResizeHandler);
+        window.removeEventListener('orientationchange', this.boundResizeHandler);
+
         if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
 
         document.body.removeAttribute('data-cinema-focus');
         if (this.backBtn) this.backBtn.destroy();
+
         if (this.scene) {
             this.scene.traverse((child) => {
                 if (child.isMesh || child.isPoints) {
-                    child.geometry.dispose();
-                    if (child.material.map) child.material.map.dispose();
-                    child.material.dispose();
+                    if (child.geometry) child.geometry.dispose();
+                    if (child.material) {
+                        if (child.material.map) child.material.map.dispose();
+                        child.material.dispose();
+                    }
                 }
             });
         }
+
         if (this.renderer) {
             this.renderer.dispose();
             this.renderer.forceContextLoss();
         }
 
-        if (this.mainVideo) { this.mainVideo.pause(); this.mainVideo.src = ''; this.mainVideo.load(); }
-        if (this.container && this.container.parentNode) this.container.parentNode.removeChild(this.container);
+        if (this.mainVideo) {
+            this.mainVideo.pause();
+            this.mainVideo.src = '';
+            this.mainVideo.load();
+        }
+
+        if (this.container && this.container.parentNode) {
+            this.container.parentNode.removeChild(this.container);
+        }
     }
 }

@@ -49,7 +49,16 @@ export class CakeScreen {
     mount() {
         this.container = document.createElement('div');
         this.container.id = 'cake-screen-container';
-        this.container.className = 'fixed inset-0 w-screen h-screen overflow-hidden bg-gradient-to-br from-pink-50 via-[#ffe4e1] to-[#ffb6c1] opacity-0 z-10';
+
+        // Chuẩn responsive 100dvh tràn màn hình tương tự LetterScreen
+        this.container.className = 'fixed inset-0 w-screen h-screen overflow-hidden opacity-0 z-10';
+        this.container.style.position = 'fixed';
+        this.container.style.top = '0';
+        this.container.style.left = '0';
+        this.container.style.width = '100vw';
+        this.container.style.height = '100vh';
+        this.container.style.height = '100dvh';
+
         this.backBtn = new BackButton(this.container, {
             variant: 'pastel',
             position: 'top-left',
@@ -58,29 +67,28 @@ export class CakeScreen {
         });
         this.backBtn.mount();
 
-        // [Responsive] Thêm các class Tailwind (md:text-5xl, text-3xl, px-4) để text vừa màn hình điện thoại
         this.container.innerHTML = `
             <div id="cake-three-canvas" class="absolute inset-0 z-0"></div>
             <div class="absolute inset-0 z-10 flex flex-col justify-end items-center pb-16 md:pb-24 pointer-events-none px-4">
                 <div class="flex flex-col items-center pointer-events-auto opacity-0 translate-y-5 transition-all duration-1000" id="cake-action-box">
-                    <button class="btn btn-secondary glass btn-md md:btn-lg px-6 md:px-8 rounded-full shadow-2xl font-playfair hover:scale-110 hover:shadow-[0_0_25px_rgba(255,182,193,0.8)] transition-all duration-300 bg-white/40 text-pink-700 border-pink-200" id="btn-light-candle">
-                        Light the Candle 🕯️
+                    <button class="btn btn-secondary glass btn-md md:btn-lg px-6 md:px-8 rounded-full shadow-2xl font-playfair hover:scale-110 hover:shadow-[0_0_25px_rgba(255,182,193,0.8)] transition-all duration-300 bg-white/50 text-rose-800 border-pink-200" id="btn-light-candle">
+                        Thổi Nến Nha Meo 🕯️
                     </button>
-                    <div class="font-vibes text-3xl md:text-5xl text-center text-rose-800 drop-shadow-[0_2px_4px_rgba(255,255,255,0.8)] mt-6 hidden opacity-0 transition-opacity duration-1000 px-2" id="cake-wish">
-                        Close your eyes, make a wish, my love... ✨
+                    <div class="font-vibes text-4xl md:text-6xl text-center text-rose-900 drop-shadow-[0_2px_4px_rgba(255,255,255,0.8)] mt-6 hidden opacity-0 transition-opacity duration-1000 px-2" id="cake-wish">
+                        Bé Cầu Nguyện i 🕯️
                     </div>
                 </div>
             </div>
             <div class="hero absolute inset-0 z-20 bg-pink-900/80 backdrop-blur-lg opacity-0 pointer-events-none transition-opacity duration-1000 p-4" id="finale-overlay">
                 <div class="hero-content text-center text-neutral-content w-full">
                     <div class="max-w-md w-full scale-75 transition-transform duration-1000 ease-out" id="finale-content">
-                        <h1 class="font-vibes text-5xl md:text-7xl text-pink-200 drop-shadow-[0_0_20px_rgba(255,182,193,0.9)] mb-4 md:mb-2 leading-tight" id="finale-message">
+                        <h1 class="font-vibes text-6xl md:text-8xl text-pink-200 drop-shadow-[0_0_20px_rgba(255,182,193,0.9)] mb-4 md:mb-2 leading-tight" id="finale-message">
                             Happy Birthday,<br class="md:hidden"/> My Princess ♡
                         </h1>
-                        <p class="font-playfair italic text-xs md:text-sm tracking-widest text-pink-100 mb-8 drop-shadow-md">
+                        <p class="font-playfair italic text-sm md:text-base tracking-widest text-pink-100 mb-8 drop-shadow-md">
                             You are my favorite wish come true.
                         </p>
-                        <button class="btn btn-outline btn-secondary btn-sm md:btn-md rounded-full hover:scale-105 transition-transform border-pink-300 text-pink-200 hover:bg-pink-300/20" id="btn-replay">
+                        <button class="btn btn-outline btn-md rounded-full hover:scale-105 transition-transform border-pink-300 text-pink-200 hover:bg-pink-300/20" id="btn-replay">
                             Replay Our Memories ♡
                         </button>
                     </div>
@@ -108,25 +116,25 @@ export class CakeScreen {
     }
 
     initThreeJS() {
-        const w = window.innerWidth;
-        const h = window.innerHeight;
+        const w = this.container.clientWidth || window.innerWidth;
+        const h = this.container.clientHeight || window.innerHeight;
         const isMobile = w < 768;
 
         this.scene = new THREE.Scene();
+        // Background pastel đầm ấm như LetterScreen
         this.scene.background = new THREE.Color(0xfff0f5);
         this.scene.fog = new THREE.FogExp2(0xffe4e1, 0.012);
 
-        // [Responsive] Tăng FOV trên điện thoại (góc nhìn rộng hơn để thấy toàn bộ 2 bên)
         this.camera = new THREE.PerspectiveCamera(isMobile ? 65 : 45, w / h, 0.1, 100);
         this.camera.position.copy(this.cameraBasePos);
 
         this.renderer = new THREE.WebGLRenderer({
-            alpha: false,
+            alpha: true,
             antialias: true,
             powerPreference: "high-performance"
         });
         this.renderer.setSize(w, h);
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -156,24 +164,43 @@ export class CakeScreen {
         this.scene.add(this.gardenGroup);
 
         window.addEventListener('resize', this.handleResize);
+        window.addEventListener('orientationchange', this.handleResize);
         window.addEventListener('mousemove', this.handleMouseMove);
 
         this.handleRender();
     }
 
+    // Tạo bụi sao hạt pastel giống hệt LetterScreen
     createFairyDust() {
-        const pCount = 300;
+        const isMobile = window.innerWidth < 768;
+        const particleCount = isMobile ? 60 : 120;
         const pGeo = new THREE.BufferGeometry();
-        const pPos = new Float32Array(pCount * 3);
-        for (let i = 0; i < pCount; i++) {
-            pPos[i * 3] = (Math.random() - 0.5) * 40;
-            pPos[i * 3 + 1] = (Math.random() - 0.5) * 30 + 10;
-            pPos[i * 3 + 2] = (Math.random() - 0.5) * 30 - 10;
+        const positions = new Float32Array(particleCount * 3);
+        const colors = new Float32Array(particleCount * 3);
+
+        const pastelColors = [
+            new THREE.Color('#ffb6c1'),
+            new THREE.Color('#ffd1dc'),
+            new THREE.Color('#fff0f5'),
+        ];
+
+        for (let i = 0; i < particleCount; i++) {
+            positions[i * 3] = (Math.random() - 0.5) * 40;
+            positions[i * 3 + 1] = (Math.random() - 0.5) * 30 + 10;
+            positions[i * 3 + 2] = (Math.random() - 0.5) * 30 - 10;
+
+            const col = pastelColors[Math.floor(Math.random() * pastelColors.length)];
+            colors[i * 3] = col.r;
+            colors[i * 3 + 1] = col.g;
+            colors[i * 3 + 2] = col.b;
         }
-        pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+
+        pGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        pGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
         const pMat = new THREE.PointsMaterial({
-            color: 0xFFFFFF,
-            size: 0.15,
+            size: 0.25,
+            vertexColors: true,
             transparent: true,
             opacity: 0.8,
             blending: THREE.AdditiveBlending
@@ -206,14 +233,14 @@ export class CakeScreen {
     }
 
     setupLighting() {
-        this.lights.ambient = new THREE.AmbientLight(0xffffff, 0.9);
+        this.lights.ambient = new THREE.AmbientLight(0xfff0f5, 1.2);
         this.scene.add(this.lights.ambient);
 
         this.lights.hemi = new THREE.HemisphereLight(0xffeeb1, 0xFFC0CB, 0.6);
         this.scene.add(this.lights.hemi);
 
-        this.lights.dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
-        this.lights.dirLight.position.set(10, 20, 15);
+        this.lights.dirLight = new THREE.DirectionalLight(0xffb6c1, 1.5);
+        this.lights.dirLight.position.set(5, 10, 7);
         this.lights.dirLight.castShadow = true;
         this.lights.dirLight.shadow.mapSize.width = 1024;
         this.lights.dirLight.shadow.mapSize.height = 1024;
@@ -360,30 +387,35 @@ export class CakeScreen {
         createCat(0xFFDAB9, -4, -6, 0.3);
     }
 
+    // Tạo hình trái tim 3D mềm mại giống LetterScreen
     createFloatingHearts() {
         const shape = new THREE.Shape();
         const x = 0, y = 0;
         shape.moveTo(x + 0.25, y + 0.25);
-        shape.bezierCurveTo(x + 0.25, y + 0.25, x + 0.2, y, x, y);
-        shape.bezierCurveTo(x - 0.3, y, x - 0.3, y + 0.35, x - 0.3, y + 0.35);
-        shape.bezierCurveTo(x - 0.3, y + 0.55, x - 0.1, y + 0.77, x + 0.25, y + 0.95);
-        shape.bezierCurveTo(x + 0.6, y + 0.77, x + 0.8, y + 0.55, x + 0.8, y + 0.35);
-        shape.bezierCurveTo(x + 0.8, y + 0.35, x + 0.8, y, x + 0.5, y);
-        shape.bezierCurveTo(x + 0.3, y, x + 0.25, y + 0.25, x + 0.25, y + 0.25);
+        shape.bezierCurveTo(x + 0.25, y + 0.25, x + 0.20, y, x, y);
+        shape.bezierCurveTo(x - 0.30, y, x - 0.30, y + 0.35, x - 0.30, y + 0.35);
+        shape.bezierCurveTo(x - 0.30, y + 0.55, x - 0.10, y + 0.77, x + 0.25, y + 1.0);
+        shape.bezierCurveTo(x + 0.60, y + 0.77, x + 0.80, y + 0.55, x + 0.80, y + 0.35);
+        shape.bezierCurveTo(x + 0.80, y, x + 0.50, y, x + 0.50, y);
+        shape.bezierCurveTo(x + 0.35, y, x + 0.25, y + 0.25, x + 0.25, y + 0.25);
 
-        const extrudeSettings = { depth: 0.2, bevelEnabled: false };
+        const extrudeSettings = { depth: 0.1, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.03, bevelThickness: 0.03 };
         const heartGeo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
         heartGeo.center();
 
-        const glassMat = new THREE.MeshPhysicalMaterial({
-            color: 0xFFB6C1, metalness: 0.1, roughness: 0.1, transmission: 0.9, thickness: 0.5, transparent: true
-        });
+        const heartMaterials = [
+            new THREE.MeshStandardMaterial({ color: 0xffb3c6, roughness: 0.3, metalness: 0.1 }),
+            new THREE.MeshStandardMaterial({ color: 0xffc2d1, roughness: 0.2, metalness: 0.2 }),
+        ];
 
-        const hCount = 15;
+        const hCount = 16;
         for (let i = 0; i < hCount; i++) {
-            const heart = new THREE.Mesh(heartGeo, glassMat);
+            const mat = heartMaterials[i % heartMaterials.length];
+            const heart = new THREE.Mesh(heartGeo, mat);
+
             heart.position.set((Math.random() - 0.5) * 30, Math.random() * 15, (Math.random() - 0.5) * 20 - 5);
-            heart.scale.setScalar(Math.random() * 0.8 + 0.4);
+            const scale = 0.35 + Math.random() * 0.55;
+            heart.scale.setScalar(scale);
             heart.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
 
             heart.userData = {
@@ -606,19 +638,18 @@ export class CakeScreen {
     }
 
     onWindowResize() {
-        if (!this.camera || !this.renderer) return;
-        const w = window.innerWidth;
-        const h = window.innerHeight;
+        if (!this.camera || !this.renderer || !this.container) return;
+        const w = this.container.clientWidth || window.innerWidth;
+        const h = this.container.clientHeight || window.innerHeight;
         const isMobile = w < 768;
 
-        // [Responsive] Tự động cập nhật lại thông số Camera khi xoay hoặc đổi kích thước màn hình
         this.cameraBasePos.set(0, isMobile ? 10 : 7, isMobile ? 48 : 35);
         this.camera.aspect = w / h;
         this.camera.fov = isMobile ? 65 : 45;
         this.camera.updateProjectionMatrix();
 
         this.renderer.setSize(w, h);
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 
         if (this.composer) {
             this.composer.setSize(w, h);
@@ -627,6 +658,7 @@ export class CakeScreen {
 
     destroy() {
         window.removeEventListener('resize', this.handleResize);
+        window.removeEventListener('orientationchange', this.handleResize);
         window.removeEventListener('mousemove', this.handleMouseMove);
         if (this.backBtn) this.backBtn.destroy();
         if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
@@ -634,9 +666,11 @@ export class CakeScreen {
         if (this.scene) {
             this.scene.traverse((child) => {
                 if (child.isMesh || child.isPoints) {
-                    child.geometry.dispose();
-                    if (child.material.map) child.material.map.dispose();
-                    child.material.dispose();
+                    if (child.geometry) child.geometry.dispose();
+                    if (child.material) {
+                        if (child.material.map) child.material.map.dispose();
+                        child.material.dispose();
+                    }
                 }
             });
         }
