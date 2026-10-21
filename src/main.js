@@ -8,6 +8,69 @@ import { CakeScreen } from './components/CakeScreen.js';
 import { spawnMagicBurst } from './utils/magicBurst.js';
 import './styles/gift.css';
 
+// ----------------------------------------------------
+// 1. Cấu hình Audio & Nhạc nền
+// ----------------------------------------------------
+// Đổi đường dẫn '/bgm.mp3' thành đường dẫn file nhạc của bạn
+const bgm = new Audio('./assets/audio/No One Noticed.mp3');
+bgm.loop = true;      // Lặp lại bài hát
+bgm.volume = 0.5;     // Âm lượng từ 0.0 đến 1.0
+
+let isMusicPlaying = false;
+
+// Hàm bật / tắt nhạc
+function toggleMusic() {
+  const btn = document.getElementById('music-toggle-btn');
+  if (bgm.paused) {
+    bgm.play().then(() => {
+      isMusicPlaying = true;
+      if (btn) btn.classList.add('playing');
+    }).catch((err) => console.log('Chưa thể phát nhạc:', err));
+  } else {
+    bgm.pause();
+    isMusicPlaying = false;
+    if (btn) btn.classList.remove('playing');
+  }
+}
+
+// Tự động phát nhạc ở lượt chạm / click đầu tiên của người dùng
+function setupAutoPlayOnInteraction() {
+  const startAudio = () => {
+    if (bgm.paused && !isMusicPlaying) {
+      bgm.play().then(() => {
+        isMusicPlaying = true;
+        const btn = document.getElementById('music-toggle-btn');
+        if (btn) btn.classList.add('playing');
+      }).catch(() => { });
+    }
+    // Gỡ bỏ sự kiện sau lần tương tác đầu tiên
+    window.removeEventListener('click', startAudio);
+    window.removeEventListener('touchstart', startAudio);
+  };
+
+  window.addEventListener('click', startAudio);
+  window.addEventListener('touchstart', startAudio);
+}
+
+// Tạo nút điều khiển nhạc dạng đĩa quay / icon nổi góc màn hình
+function createMusicButton() {
+  if (document.getElementById('music-toggle-btn')) return;
+
+  const btn = document.createElement('button');
+  btn.id = 'music-toggle-btn';
+  btn.className = 'music-toggle-btn';
+  btn.setAttribute('aria-label', 'Bật / Tắt nhạc');
+  btn.innerHTML = '🎵';
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation(); // Tránh kích hoạt các sự kiện click khác trên màn hình
+    toggleMusic();
+  });
+
+  document.body.appendChild(btn);
+}
+// ----------------------------------------------------
+
 const canvas = document.getElementById('webgl-canvas');
 const uiContainer = document.getElementById('ui-container');
 const loadingScreen = document.getElementById('loading-screen');
@@ -24,12 +87,10 @@ function setStage(name) {
   document.body.dataset.stage = name;
 }
 
-// Lắng nghe sự kiện thay đổi kích thước toàn cục (Resize & Orientation)
 function handleGlobalResize() {
   const w = window.innerWidth;
   const h = window.innerHeight;
 
-  // Cập nhật kích thước Canvas WebGL GiftScene nếu đang hoạt động
   if (canvas && giftScene && document.body.dataset.stage === 'gift') {
     canvas.style.width = `${w}px`;
     canvas.style.height = `${h}px`;
@@ -82,6 +143,15 @@ function renderGiftUI() {
 
 function handleOpenGift() {
   if (!giftScene || giftScene.isOpening) return;
+
+  // Đảm bảo phát nhạc khi người dùng bấm nút mở quà
+  if (bgm.paused) {
+    bgm.play().then(() => {
+      isMusicPlaying = true;
+      const btn = document.getElementById('music-toggle-btn');
+      if (btn) btn.classList.add('playing');
+    }).catch(() => { });
+  }
 
   spawnMagicBurst(burstLayer, 20);
 
@@ -161,6 +231,9 @@ function handleGalaxyContinue() {
       }
 
       setStage('video-cinema');
+
+      // Tùy chọn: Tạm dừng nhạc nền khi trình chiếu video kỷ niệm nếu video có âm thanh riêng
+      // bgm.pause();
 
       videoScreen = new VideoAnniversary();
       videoScreen.mount(appContainer);
@@ -259,6 +332,10 @@ window.addEventListener('DOMContentLoaded', () => {
   setStage('gift');
   initGiftScene();
   renderGiftUI();
+
+  // Khởi tạo nút nhạc và đăng ký tự động phát nhạc khi chạm màn hình
+  createMusicButton();
+  setupAutoPlayOnInteraction();
 
   window.addEventListener('resize', handleGlobalResize);
   window.addEventListener('orientationchange', handleGlobalResize);

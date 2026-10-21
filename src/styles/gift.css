@@ -8,6 +8,48 @@
   z-index: 1;
 }
 
+/* Nút nhạc nổi cố định ở góc trên bên phải */
+.music-toggle-btn {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 9999;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease, background-color 0.3s ease;
+}
+
+.music-toggle-btn:hover {
+  transform: scale(1.1);
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Hiệu ứng xoay tròn đĩa nhạc khi nhạc đang phát */
+.music-toggle-btn.playing {
+  animation: rotateMusicBtn 4s linear infinite;
+}
+
+@keyframes rotateMusicBtn {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .gift-atmosphere .haze {
   position: absolute;
   inset: auto;
@@ -55,12 +97,40 @@
   border-radius: 50%;
 }
 
-.gift-atmosphere .css-cloud::before { width: 46px; height: 46px; top: -20px; left: 18px; }
-.gift-atmosphere .css-cloud::after { width: 34px; height: 34px; top: -12px; right: 16px; }
+.gift-atmosphere .css-cloud::before {
+  width: 46px;
+  height: 46px;
+  top: -20px;
+  left: 18px;
+}
 
-.gift-atmosphere .css-cloud.c1 { top: 14%; left: 6%; animation-duration: 24s; }
-.gift-atmosphere .css-cloud.c2 { top: 22%; right: 8%; width: 90px; animation-duration: 18s; animation-direction: reverse; }
-.gift-atmosphere .css-cloud.c3 { bottom: 18%; left: 10%; width: 80px; opacity: 0.4; }
+.gift-atmosphere .css-cloud::after {
+  width: 34px;
+  height: 34px;
+  top: -12px;
+  right: 16px;
+}
+
+.gift-atmosphere .css-cloud.c1 {
+  top: 14%;
+  left: 6%;
+  animation-duration: 24s;
+}
+
+.gift-atmosphere .css-cloud.c2 {
+  top: 22%;
+  right: 8%;
+  width: 90px;
+  animation-duration: 18s;
+  animation-direction: reverse;
+}
+
+.gift-atmosphere .css-cloud.c3 {
+  bottom: 18%;
+  left: 10%;
+  width: 80px;
+  opacity: 0.4;
+}
 
 .gift-atmosphere .twinkle {
   position: absolute;
@@ -69,9 +139,24 @@
   animation: sparkleTwinkle 3.2s ease-in-out infinite;
   opacity: 0.7;
 }
-.gift-atmosphere .twinkle.t1 { top: 18%; left: 18%; }
-.gift-atmosphere .twinkle.t2 { top: 28%; right: 16%; animation-delay: 0.7s; }
-.gift-atmosphere .twinkle.t3 { top: 12%; right: 32%; animation-delay: 1.4s; font-size: 0.9rem; }
+
+.gift-atmosphere .twinkle.t1 {
+  top: 18%;
+  left: 18%;
+}
+
+.gift-atmosphere .twinkle.t2 {
+  top: 28%;
+  right: 16%;
+  animation-delay: 0.7s;
+}
+
+.gift-atmosphere .twinkle.t3 {
+  top: 12%;
+  right: 32%;
+  animation-delay: 1.4s;
+  font-size: 0.9rem;
+}
 
 .gift-header {
   text-align: center;
@@ -125,8 +210,13 @@
 }
 
 @keyframes recipientGlow {
-  0%   { text-shadow: 0 0 16px rgba(224, 122, 150, 0.25); }
-  100% { text-shadow: 0 0 32px rgba(224, 122, 150, 0.5), 0 0 12px rgba(255, 200, 220, 0.35); }
+  0% {
+    text-shadow: 0 0 16px rgba(224, 122, 150, 0.25);
+  }
+
+  100% {
+    text-shadow: 0 0 32px rgba(224, 122, 150, 0.5), 0 0 12px rgba(255, 200, 220, 0.35);
+  }
 }
 
 .gift-footer {
@@ -159,9 +249,9 @@
   cursor: pointer;
   box-shadow:
     0 14px 34px rgba(224, 122, 150, 0.22),
-    0 2px 0 rgba(255,255,255,0.9) inset;
+    0 2px 0 rgba(255, 255, 255, 0.9) inset;
   transition: transform var(--duration-base) var(--ease-out-smooth),
-              box-shadow var(--duration-base) var(--ease-out-smooth);
+    box-shadow var(--duration-base) var(--ease-out-smooth);
   overflow: hidden;
 }
 
@@ -169,7 +259,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.8) 50%, transparent 70%);
+  background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, 0.8) 50%, transparent 70%);
   background-size: 200% 100%;
   opacity: 0;
 }
@@ -196,7 +286,10 @@
   animation: sparkleTwinkle 2.6s ease-in-out infinite;
 }
 
-.btn-text { position: relative; z-index: 2; }
+.btn-text {
+  position: relative;
+  z-index: 2;
+}
 
 .gift-hint-text {
   margin-top: 0.7rem;
@@ -217,6 +310,9 @@
     width: min(100%, 320px);
     padding: 0.95rem 1.6rem;
   }
+
   .gift-atmosphere .css-cloud.c3,
-  .gift-atmosphere .twinkle.t3 { display: none; }
+  .gift-atmosphere .twinkle.t3 {
+    display: none;
+  }
 }
