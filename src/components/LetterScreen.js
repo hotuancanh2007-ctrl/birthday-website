@@ -7,9 +7,7 @@ import '../styles/back-button.css';
 import '../styles/letter.css';
 
 /**
- * LetterScreen — Stage 2: The Birthday Letter (3D Pink Pastel 2026 Edition)
- * Fixed: Stagger delay on long paragraphs & text color visibility.
- * Optimized: Event listeners, resize throttling, off-screen rendering pause, cleanup.
+ * LetterScreen — Stage 2: The Birthday Letter (Safari & Mobile Fully Responsive Edition)
  */
 export class LetterScreen {
   constructor(parentElement, options = {}) {
@@ -73,17 +71,19 @@ export class LetterScreen {
 
     this.element = document.createElement('div');
     this.element.id = 'screen-letter';
-    this.element.style.position = 'absolute'; // Đổi từ relative sang absolute hoặc fixed nếu muốn full toàn bộ màn
-    this.element.style.top = '0';
-    this.element.style.left = '0';
-    this.element.style.width = '100%';
+    this.element.style.position = 'fixed';
+    this.element.style.inset = '0';
+    this.element.style.width = '100vw';
 
-    this.element.style.minHeight = '100vh'; // Fallback cho trình duyệt cũ
-    this.element.style.minHeight = '100dvh'; // Đơn vị động tương thích hoàn hảo với Safari
+    // Tương thích chiều cao màn hình tuyệt đối trên Safari iOS
+    this.element.style.minHeight = '100vh';
+    this.element.style.minHeight = '100dvh';
+    this.element.style.minHeight = '-webkit-fill-available';
 
-    this.element.style.overflow = 'hidden'; // Ngăn cuộn trang tổng
+    this.element.style.overflow = 'hidden';
     this.element.style.display = 'flex';
     this.element.style.flexDirection = 'column';
+    this.element.style.webkitFontSmoothing = 'antialiased';
 
     const peekingText = this.pages[0]?.paragraphs[0] || 'Chúc mừng sinh nhật em yêu...';
 
@@ -121,7 +121,7 @@ export class LetterScreen {
               <span>SPECIAL</span>
             </div>
 
-            <div class="draggable-letter-sheet" id="draggable-letter-sheet" role="button" aria-label="Kéo lá thư lên để mở">
+            <div class="draggable-letter-sheet" id="draggable-letter-sheet" role="button" aria-label="Kéo lá thư lên để mở" style="touch-action: none;">
               <div class="pull-tab">
                 <span>▲</span>
                 <span>Kéo lá thư lên ♡</span>
@@ -146,7 +146,7 @@ export class LetterScreen {
       </main>
 
       <!-- ── LETTER READING CARD ── -->
-      <section class="letter-reading-card" id="letter-reading-card" aria-label="Nội dung bức thư sinh nhật" style="position: relative; z-index: 2;">
+      <section class="letter-reading-card" id="letter-reading-card" aria-label="Nội dung bức thư sinh nhật" style="position: relative; z-index: 2; -webkit-overflow-scrolling: touch;">
         <div class="reading-meta">
           <span class="reading-date">${birthdayData?.letter?.date || ''}</span>
           <div class="reading-page-indicator" id="reading-page-indicator"></div>
@@ -170,17 +170,16 @@ export class LetterScreen {
         <span class="stage5-badge">💌 ♡ </span>
         <h3 class="stage5-title">Em đã đọc đến cuối thư rồi...</h3>
         <p class="stage5-desc">
-          Cảm ơn em vì đã dành thời gian đọc từng trang thư nhỏ này của anh.
-          Mỗi chữ anh viết đều chứa đựng cả trái tim yêu thương dành riêng cho em ♡
+          Cảm ơn em vì đã dành thời gian đọc từng trang thư nhỏ này của anh♡
         </p>
         <div class="stage5-actions">
           <button class="btn-stage5-action primary" id="btn-stage5-continue">
-            <span> Tiếp tục hành trình ♡</span>
+            <span> Tiếp tục hoiiii meo ♡</span>
           </button>
-          
         </div>
       </aside>
     `;
+
     this.backBtn = new BackButton(this.element, {
       variant: 'glass',
       position: 'top-left',
@@ -230,9 +229,16 @@ export class LetterScreen {
       canvas: this.threeCanvas,
       alpha: true,
       antialias: true,
+      powerPreference: 'high-performance'
     });
     this.threeRenderer.setSize(width, height);
-    this.threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    this.threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+
+    // Xử lý mất WebGL Context trên Safari
+    this.threeRenderer.domElement.addEventListener('webglcontextlost', (e) => {
+      e.preventDefault();
+      if (this.threeAnimId) cancelAnimationFrame(this.threeAnimId);
+    }, false);
 
     const ambientLight = new THREE.AmbientLight(0xfff0f5, 1.2);
     this.threeScene.add(ambientLight);
@@ -276,7 +282,7 @@ export class LetterScreen {
       this.floatingHearts.push(mesh);
     }
 
-    const particleCount = isMobile ? 50 : 110;
+    const particleCount = isMobile ? 40 : 100;
     const particleGeo = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
     const colors = new Float32Array(particleCount * 3);
@@ -312,21 +318,22 @@ export class LetterScreen {
     this.particleSystem = new THREE.Points(particleGeo, particleMat);
     this.threeScene.add(this.particleSystem);
 
-    let clock = new THREE.Clock();
     const animate = () => {
       this.threeAnimId = requestAnimationFrame(animate);
+      if (document.hidden || !this.threeScene || !this.threeRenderer) return;
 
-      if (document.hidden || !this.threeScene) return;
-
-      const elapsedTime = clock.getElapsedTime();
-
+      this.floatingHearts.forEach(heart => {
+        heart.position.y += heart.userData.speedY;
+        heart.rotation.x += heart.userData.rotSpeedX;
+        heart.rotation.y += heart.userData.rotSpeedY;
+        if (heart.position.y > 12) heart.position.y = -12;
+      });
 
       this.threeRenderer.render(this.threeScene, this.threeCamera);
     };
 
     animate();
 
-    // OPTIMIZATION: Bọc debounce/requestAnimationFrame cho sự kiện resize
     let resizeTimeout;
     this._onResizeBound = () => {
       if (resizeTimeout) cancelAnimationFrame(resizeTimeout);
@@ -363,7 +370,7 @@ export class LetterScreen {
   handleResize() {
     if (!this.threeCamera || !this.threeRenderer) return;
     const width = window.innerWidth;
-    const height = this.element ? this.element.clientHeight : window.innerHeight;
+    const height = window.innerHeight;
     const isMobile = width < 768;
 
     this.threeCamera.aspect = width / height;
@@ -372,14 +379,13 @@ export class LetterScreen {
     this.threeCamera.updateProjectionMatrix();
 
     this.threeRenderer.setSize(width, height);
-    this.threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   }
 
   formatTextToSpans(text) {
     if (text === undefined || text === null) return '';
     const str = String(text);
 
-    // OPTIMIZATION: Wrap by word instead of by character to reduce DOM nodes by ~80%
     return str.split('\n').map(line => {
       const words = line.split(' ');
       return words.map(word => {
@@ -445,21 +451,14 @@ export class LetterScreen {
         gsap.killTweensOf(charElements);
         gsap.fromTo(
           charElements,
-          {
-            opacity: 0,
-            y: 10, // Chỉ dùng transform
-          },
+          { opacity: 0, y: 10 },
           {
             opacity: 1,
             y: 0,
             duration: 0.35,
-            stagger: {
-              amount: 2, // Giảm amount một chút để text hiện nhanh, dứt khoát hơn
-              from: 'start'
-            },
+            stagger: { amount: 1.8, from: 'start' },
             ease: 'power2.out',
             onComplete: () => {
-              // Dọn dẹp inline style sau khi animate xong để giải phóng bộ nhớ
               gsap.set(charElements, { clearProps: 'transform,opacity' });
             }
           }
@@ -554,7 +553,6 @@ export class LetterScreen {
     const isForward = newIndex > this.currentPageIndex;
     if (!wrapper) return;
 
-    // OPTIMIZATION: Force hardware acceleration
     gsap.to(wrapper, {
       opacity: 0,
       x: isForward ? -22 : 22,
@@ -591,18 +589,6 @@ export class LetterScreen {
         if (!this.isOpen) this.openLetterCompletely();
       });
     }
-    if (draggableSheet) {
-      draggableSheet.addEventListener('pointerdown', (e) => {
-        this._pointerMoveBound = onPointerMove;
-        this._pointerUpBound = onPointerUp;
-
-        window.addEventListener('pointermove', this._pointerMoveBound, { passive: true });
-        window.addEventListener('pointerup', this._pointerUpBound, { passive: true });
-        window.addEventListener('pointercancel', this._pointerUpBound, { passive: true });
-
-        onPointerDown(e);
-      }, { passive: true });
-    }
 
     if (envelopeWrapper) {
       envelopeWrapper.addEventListener('click', (e) => {
@@ -619,6 +605,10 @@ export class LetterScreen {
       this.currentPullY = 0;
       draggableSheet?.classList.add('is-dragging');
       envelopeWrapper?.classList.add('is-unsealed');
+
+      window.addEventListener('pointermove', onPointerMove, { passive: true });
+      window.addEventListener('pointerup', onPointerUp, { passive: true });
+      window.addEventListener('pointercancel', onPointerUp, { passive: true });
     };
 
     const onPointerMove = (e) => {
@@ -633,28 +623,37 @@ export class LetterScreen {
         if (this.currentPullY <= -110) {
           this.isDraggingLetter = false;
           draggableSheet?.classList.remove('is-dragging');
+          onPointerUp();
           this.openLetterCompletely();
         }
       }
     };
 
     const onPointerUp = () => {
-      // ... existing logic ...
-      window.removeEventListener('pointermove', this._pointerMoveBound);
-      window.removeEventListener('pointerup', this._pointerUpBound);
-      window.removeEventListener('pointercancel', this._pointerUpBound);
-    }
+      this.isDraggingLetter = false;
+      draggableSheet?.classList.remove('is-dragging');
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerUp);
+
+      if (!this.isOpen && draggableSheet && this.currentPullY > -110) {
+        gsap.to(draggableSheet, {
+          y: 0,
+          duration: 0.4,
+          ease: 'back.out(1.5)',
+          onComplete: () => {
+            envelopeWrapper?.classList.remove('is-unsealed');
+          }
+        });
+      }
+    };
 
     this._pointerMoveBound = onPointerMove;
     this._pointerUpBound = onPointerUp;
     this._pointerCancelBound = onPointerUp;
 
-    // OPTIMIZATION: Thêm { passive: true } vào các sự kiện kéo thả
     if (draggableSheet) {
       draggableSheet.addEventListener('pointerdown', onPointerDown, { passive: true });
-      window.addEventListener('pointermove', onPointerMove, { passive: true });
-      window.addEventListener('pointerup', onPointerUp, { passive: true });
-      window.addEventListener('pointercancel', onPointerUp, { passive: true });
     }
 
     if (readingCard) {
@@ -736,6 +735,7 @@ export class LetterScreen {
       opacity: 0,
       duration: 0.5,
       ease: 'power2.in',
+      force3D: true,
     }, 0);
 
     tl.to(envelopeArea, {
@@ -743,6 +743,7 @@ export class LetterScreen {
       scale: 0.92,
       duration: 0.45,
       ease: 'power2.inOut',
+      force3D: true,
     }, 0.15);
 
     tl.add(() => {
@@ -755,12 +756,11 @@ export class LetterScreen {
 
     tl.fromTo(readingCard,
       { opacity: 0, y: 24 },
-      { opacity: 1, y: 0, duration: 0.65, ease: 'power2.out' },
+      { opacity: 1, y: 0, duration: 0.65, ease: 'power2.out', force3D: true },
       0.55
     );
   }
 
-  // OPTIMIZATION: Bỏ đoạn mã trùng lặp foldBackEnvelope(). Chỉ giữ lại hàm này.
   foldBackEnvelope() {
     if (!this.isOpen) return;
 
@@ -779,6 +779,7 @@ export class LetterScreen {
       y: 20,
       duration: 0.4,
       ease: 'power2.in',
+      force3D: true,
       onComplete: () => {
         if (readingCard) readingCard.style.display = 'none';
         this.currentPageIndex = 0;
@@ -788,7 +789,7 @@ export class LetterScreen {
 
     tl.fromTo(envelopeArea,
       { opacity: 0, scale: 0.92 },
-      { opacity: 1, scale: 1, duration: 0.55, ease: 'power2.out' },
+      { opacity: 1, scale: 1, duration: 0.55, ease: 'power2.out', force3D: true },
       0.4
     );
 
@@ -816,7 +817,6 @@ export class LetterScreen {
       cancelAnimationFrame(this.threeAnimId);
     }
 
-    // OPTIMIZATION: Dọn dẹp cả Texture nếu có và đặt null các tham chiếu
     if (this.threeScene) {
       this.threeScene.traverse((object) => {
         if (object.geometry) object.geometry.dispose();

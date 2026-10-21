@@ -85,9 +85,9 @@ export class GalaxyScreen {
         <h2 class="galaxy-title">Thiên Hà Kỷ Niệm♡♡♡</h2>
       </div>
       <div class="galaxy-hint">
-        <button class="btn-galaxy-continue" id="btn-galaxy-continue" aria-label="Tiếp tục hành trình">
+        <button class="btn-galaxy-continue" id="btn-galaxy-continue" aria-label="Tiếp nò gieooo">
           <span aria-hidden="true">🌌</span>
-          <span>Tiếp tục hành trình ♡</span>
+          <span>Tiếp nò gieooo ♡</span>
         </button>
       </div>
       <div class="galaxy-modal-overlay" id="galaxy-modal-overlay" role="dialog" aria-modal="true" aria-label="Chi tiết kỷ niệm">

@@ -31,16 +31,16 @@ export const birthdayData = {
         pageNumber: 1,
         subtitle: "Chúc Mừng Sinh Nhật Em Yêu",
         paragraphs: [
-          "Chúc mừng sinh nhật cô gái tuyệt vời nhất trong thế giới của anh! Cảm ơn em vì đã đến bên anh, mang theo nụ cười rạng rỡ và cả những điều ngọt ngào dịu êm nhất.",
-          "Mỗi khoảnh khắc được cùng em đi qua những góc phố, chia sẻ từng câu chuyện thường ngày, hay chỉ đơn giản là cùng ngồi ngắm hoàng hôn buông xuống đều là những trang ký ức vô giá mà anh luôn trân trọng."
+          "Ta daadaaaaaaa phải Đan meoo đó hom ta , Hôm này là sinh nhật của ai í taaaa?(Gợi ý:hỏi anh Tuấn Cảnh í hehehe)",
+          "Tuấn Cảnh trả lời: hôm nay là 1 ngày rất rất rất đặc biệt đối với  cô gái bé nhỏ của anh, chúc bé iu của anh có 1 ngày sinh nhật thật là vui vẻ hạnh phúc ,  mọi sự không may và những nỗi buồn meo đã và đang trải qua đều biến mất,chúc bé iu của anh ngày càng trở nên xinh đẹp ,đáng iuuu , nhẹ nhàng(với anh). Trong mọi tình huống đều có thể mạnh mẽ và đối mặt(nma nhõng nhẽo với anh hehe), người ta nói ó học chưa chắc đã thành công nhưng nó là con đường ngắn nhất dẫn đến thành công nên là mong bé của anh sẽ học thật là giỏi để đạt được những ước mơ mà bé mong muốn. "
         ]
       },
       {
         pageNumber: 2,
-        subtitle: "Hành trình yêu thương phía trước",
+        subtitle: "....",
         paragraphs: [
-          "Bước sang tuổi mới, anh chúc em luôn an yên, rạng rỡ, tự tin theo đuổi mọi ước mơ của mình. Dù chặng đường phía trước có ra sao, anh vẫn sẽ luôn ở đây, đồng hành và yêu thương em từng ngày.",
-          "Cảm ơn em vì đã là một phần không thể thiếu trong cuộc đời anh. Hãy luôn mỉm cười thật tươi nhé em bé, vì nụ cười của em chính là điều kỳ diệu nhất đối với anh ♡"
+          "Hôm này là sinh nhật của bé và đã 2 năm tụi mình chưa được đón sinh nhật với nhau rồi, thật sự thì anh thấy rất thiệt thòi cho bé vì phải yêu xa, đối với nhiều người thì yêu xa rất khó, nhưng emmm vẫn bỏ qua điều đó và yêu anh đến hiện tại, mong là tụi mình có thể vì nhau trong những lúc chúng ta bất đồng mà nắm tay nhau đi đến đoạn được phía trước và có 'Chúng Ta Của Tương lai' ,sẽ có 1 đám cưới thật là linh đình anh là chú rể meo là cô dâu ó nho , sống với nhau hạnh phúc mãi mãi....",
+          "Cảm ơn em vì đã là một phần không thể thiếu trong cuộc đời anh, lúc ở trong Sài Gòn ó 1 ngày có thể anh chỉ có trò chuyện mình em ò, u thật sự rất vuiii khi vẫn còn người luôn nhớ và trò chuyện với anh mỗi ngày lun í.Nhớ đợt em dô thăm anh á lúc đó anh cảm nhận được sự yêu thương từ em quá trời luôn, dô Sài Gòn thăm anh nè,Chị Ý ha Bé Anh ăn cái gì là anh cũng phải có , rồi bé lột vỏ trái cây cho anh ăn , ngồi sửa kính cho anh, rồi lúc em sợ anh học bài bùn xún ngồi với anh nữa, eyyy lúc đó yêu em quá trời luôn.Rồi lên nhà Meo chơi em lo cho anh đem nhiều mềnh gối xuống cho anh nằm, Hú Hú vuiii quá trời lun ò .Cảm ơn em, Cảm ơn emmm đã yêu anh, Cảm ơn em đã Đến bên đời anhhhh♡"
         ]
       }
     ],
@@ -51,7 +51,7 @@ export const birthdayData = {
       "Bước sang tuổi mới, anh chúc em luôn an yên, rạng rỡ, tự tin theo đuổi mọi ước mơ của mình. Dù chặng đường phía trước có ra sao, anh vẫn sẽ luôn ở đây, đồng hành và yêu thương em từng ngày."
     ],
     closing: "Mãi yêu em,",
-    signature: "Anh của em ♡",
+    signature: "Bi Gieoo ♡",
     continueButtonText: "Đọc xong rồi, tiếp tục nhé ♡"
   },
 
@@ -60,7 +60,7 @@ export const birthdayData = {
     {
       id: "memory-1",
       title: "Ngày Đầu Tiên Gặp Gỡ",
-      date: "14/02/2024",
+      date: "17/08/2025",
       image: "./assets/images/anh1.jpg",
       story: "Lần đầu tiên gặp mặt nè bé siêu hồi hợp , may mắn là anh cũng nói chuyện nhiều với meo"
     },
@@ -74,14 +74,14 @@ export const birthdayData = {
     {
       id: "memory-3",
       title: "Đi chuwiii tết nè há vợ",
-      date: "15/10/2024",
+      date: "20/02/2026",
       image: "./assets/images/an3.jpg",
       story: "Lúc này là năm đầu tiên mình được chơi tết với bé nè, ùi ui hôm đó quá tuyệt vời với cô nàng váy đỏ."
     },
     {
       id: "memory-4",
       title: "Lúc này bé dô SG thăm anh nè",
-      date: "25/12/2024",
+      date: "30/06/2024",
       image: "./assets/images/anh4.jpg",
       story: "Siêu bất ngờ lun ó bé, yêu xa lâu ngày quó bé dô anh mừng quá trời luôn, ngày bé lên xe về lại anh bùn thiu lun ò =((."
     },
@@ -94,14 +94,13 @@ export const birthdayData = {
     }
   ],
 
-  // 5. Màn 4: Hành Trình Của Chúng Mình (Our Story Timeline)[cite: 1]
   timeline: [
     {
       id: "story-1",
       period: "Tháng 2, 2024",
       title: "Khi Định Mệnh Gõ Cửa",
       description: "Hai con người từ xa lạ tình cờ bước vào thế giới của nhau, bắt đầu cho một hành trình dịu dàng.",
-      mediaType: "image", // "image" hoặc "video"
+      mediaType: "./assets/images/placeholder-1.jpg", // "image" hoặc "video"
       mediaSrc: "./assets/images/placeholder-1.jpg"
     },
     {
@@ -122,12 +121,11 @@ export const birthdayData = {
     }
   ],
 
-  // 6. Màn 5: Rạp Phim Yêu Thương (Video Anniversary)[cite: 4]
   videos: [
     {
       title: "Khung Hình Tình Yêu",
       date: "14/02/2024",
-      src: "./assets/videos/video1.mp4",
+      src: "./assets/videos/video3.mp4",
       poster: "./assets/images/poster1.jpg"
     },
     {

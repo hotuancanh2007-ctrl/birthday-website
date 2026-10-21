@@ -45,7 +45,7 @@ function createRoseBudSprite({ paletteKey = 'sweetBlush' }) {
     const radius = 24;
     const logicalSize = radius * 2.4;
     const canvas = document.createElement('canvas');
-    const dpr = 2;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = logicalSize * dpr;
     canvas.height = logicalSize * dpr;
     const ctx = canvas.getContext('2d');
@@ -76,7 +76,7 @@ function createRoseBudSprite({ paletteKey = 'sweetBlush' }) {
 
 function createRealisticRoseSprite({ radius = 46, paletteKey = 'sweetBlush', seed = 2010 }) {
     const logicalSize = radius * 2.8;
-    const dpr = 2;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const colors = COLOR_PALETTES[paletteKey] || COLOR_PALETTES.sweetBlush;
 
     const baseCanvas = document.createElement('canvas');
@@ -137,12 +137,22 @@ function softenPetals(source, logicalSize, radius) {
     image.height = source.height;
     const c = image.getContext('2d');
     const pixelRatio = source.width / logicalSize;
-    c.globalAlpha = 0.3;
-    c.filter = `blur(${radius * 0.13 * pixelRatio}px) brightness(1.35)`;
-    c.drawImage(source, 0, 0);
-    c.globalAlpha = 1;
-    c.filter = `blur(${radius * 0.009 * pixelRatio}px) brightness(1.06)`;
-    c.drawImage(source, 0, 0);
+
+    // Safari Compatibility Check for Canvas Filter
+    if ('filter' in c) {
+        c.globalAlpha = 0.3;
+        c.filter = `blur(${radius * 0.13 * pixelRatio}px) brightness(1.35)`;
+        c.drawImage(source, 0, 0);
+        c.globalAlpha = 1;
+        c.filter = `blur(${radius * 0.009 * pixelRatio}px) brightness(1.06)`;
+        c.drawImage(source, 0, 0);
+    } else {
+        // Fallback for older Safari iOS without 2D Context Filter
+        c.globalAlpha = 0.85;
+        c.drawImage(source, 0, 0);
+        c.globalAlpha = 1.0;
+        c.drawImage(source, 0, 0);
+    }
     return image;
 }
 
@@ -169,9 +179,9 @@ const easeOutBack = n => {
 };
 const rand = (a = 0, b = 1) => a + Math.random() * (b - a);
 
-const FLOOR_Y = -1.8;          // mặt sàn của cảnh 3D
-const GROW_SECONDS = 7.6;      // thời gian vườn nở
-const WISH_SECONDS = 5;        // thời gian ước nguyện trước khi tự thổi nến
+const FLOOR_Y = -1.8;
+const GROW_SECONDS = 7.6;
+const WISH_SECONDS = 5;
 const GROW_STAGES = [
     [0, 'Từ một bông hoa, cả khu vườn đang thức giấc…'],
     [0.3, 'Từng nụ hồng đang hé nở…'],
@@ -217,7 +227,7 @@ function heartPath(ctx, s) {
 }
 
 // =============================================================================
-// 3. STYLES
+// 3. STYLES (ENHANCED FOR SAFARI & MOBILE RESPONSIVENESS)
 // =============================================================================
 const FONT_URL = 'https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:ital,wght@0,500;0,600;1,400&family=Quicksand:wght@500;600;700&display=swap';
 
@@ -229,8 +239,13 @@ const STYLES = `
     --font-ui: "Quicksand", "Nunito", system-ui, sans-serif;
     --font-letter: "Playfair Display", "Noto Serif", serif;
     --font-script: "Great Vibes", "Vibes", cursive;
-    position: fixed; inset: 0; width: 100vw; height: 100dvh; overflow: hidden; z-index: 10;
+    position: fixed; inset: 0; width: 100vw; 
+    height: 100vh; height: 100dvh; height: -webkit-fill-available;
+    overflow: hidden; z-index: 10;
     font-family: var(--font-ui); color: var(--ink);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+    touch-action: none;
     -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
 }
 #cake-screen-wrapper *, #cake-screen-wrapper *::before, #cake-screen-wrapper *::after { box-sizing: border-box; }
@@ -243,14 +258,16 @@ const STYLES = `
     -webkit-backdrop-filter: blur(16px) saturate(1.5);
     backdrop-filter: blur(16px) saturate(1.5);
     box-shadow: 0 18px 44px -20px rgba(184,62,104,.4), inset 0 1px 0 rgba(255,255,255,.7);
+    -webkit-transform: translateZ(0); transform: translateZ(0);
 }
 #cake-screen-wrapper .cs-btn {
     position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-    border: 0; cursor: pointer; overflow: hidden; padding: 15px 30px; border-radius: 999px;
-    font: 700 clamp(14px, 1.8vw, 16px)/1 var(--font-ui); letter-spacing: .02em; color: #fff;
+    border: 0; cursor: pointer; overflow: hidden; padding: 14px 28px; border-radius: 999px;
+    font: 700 clamp(13px, 1.8vw, 16px)/1 var(--font-ui); letter-spacing: .02em; color: #fff;
     background: linear-gradient(135deg, #ff8fb1 0%, #e0658c 55%, #c64b70 100%);
     box-shadow: 0 12px 28px -10px rgba(198,75,112,.7), inset 0 1px 0 rgba(255,255,255,.55);
     transition: transform .4s var(--ease), box-shadow .4s var(--ease);
+    -webkit-transform: translateZ(0); transform: translateZ(0);
 }
 #cake-screen-wrapper .cs-btn::after {
     content: ""; position: absolute; inset: 0; translate: -130% 0;
@@ -288,38 +305,39 @@ const STYLES = `
 #cake-screen-wrapper #flowers { position: absolute; inset: 0; z-index: -1; width: 100%; height: 100%; }
 
 #cake-screen-wrapper .cs-header {
-    position: absolute; top: max(18px, env(safe-area-inset-top)); left: clamp(14px, 4vw, 64px); right: clamp(14px, 4vw, 64px);
-    display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; pointer-events: none;
+    position: absolute; top: max(16px, env(safe-area-inset-top)); left: clamp(12px, 4vw, 64px); right: clamp(12px, 4vw, 64px);
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; pointer-events: none; z-index: 5;
 }
 #cake-screen-wrapper .cs-dedication {
-    margin: 0; padding: 11px 20px; border-radius: 999px; font: italic 500 clamp(13px, 1.6vw, 18px)/1.4 var(--font-letter);
+    margin: 0; padding: 10px 18px; border-radius: 999px; font: italic 500 clamp(12px, 1.6vw, 18px)/1.4 var(--font-letter);
     animation: cs-rise .9s var(--ease) .15s both;
 }
-#cake-screen-wrapper .cs-date { display: flex; align-items: center; gap: 12px; margin: 0; padding: 8px 18px 8px 8px; border-radius: 22px; animation: cs-rise .9s var(--ease) .3s both; }
+#cake-screen-wrapper .cs-date { display: flex; align-items: center; gap: 10px; margin: 0; padding: 6px 16px 6px 6px; border-radius: 22px; animation: cs-rise .9s var(--ease) .3s both; }
 #cake-screen-wrapper .cs-date b {
-    display: grid; place-items: center; min-width: 54px; height: 46px; padding: 0 8px; border-radius: 16px; color: #fff;
-    font: 600 16px/1 var(--font-letter); background: linear-gradient(145deg, #ff9fbd, #e0658c); box-shadow: 0 8px 18px -8px rgba(198,75,112,.8);
+    display: grid; place-items: center; min-width: 48px; height: 42px; padding: 0 6px; border-radius: 14px; color: #fff;
+    font: 600 15px/1 var(--font-letter); background: linear-gradient(145deg, #ff9fbd, #e0658c); box-shadow: 0 8px 18px -8px rgba(198,75,112,.8);
 }
-#cake-screen-wrapper .cs-date span { font-size: 11.5px; font-weight: 700; line-height: 1.35; color: var(--muted); text-align: left; }
+#cake-screen-wrapper .cs-date span { font-size: 11px; font-weight: 700; line-height: 1.35; color: var(--muted); text-align: left; }
 
 #cake-screen-wrapper .cs-intro {
-    position: absolute; left: 20px; right: 20px; top: clamp(92px, 17vh, 168px); text-align: center; pointer-events: none;
-    transition: opacity .8s var(--ease), transform .8s var(--ease), filter .8s var(--ease);
+    position: absolute; left: 20px; right: 20px; top: clamp(80px, 16vh, 168px); text-align: center; pointer-events: none;
+    transition: opacity .8s var(--ease), transform .8s var(--ease), filter .8s var(--ease); z-index: 5;
 }
 #cake-screen-wrapper .cs-eyebrow {
-    display: inline-block; padding: 7px 16px; border-radius: 999px; font-size: 11.5px; font-weight: 700; letter-spacing: .16em;
+    display: inline-block; padding: 6px 14px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: .16em;
     text-transform: uppercase; color: var(--rose-deep); animation: cs-rise .9s var(--ease) .45s both;
 }
 #cake-screen-wrapper .cs-intro h1 {
-    margin: 16px 0 0; font: 500 clamp(30px, 5.2vw, 56px)/1.25 var(--font-letter); animation: cs-rise 1s var(--ease) .6s both;
-    background: linear-gradient(120deg, #8c2f55, #d6527c 45%, #f08aa6); -webkit-background-clip: text; background-clip: text; color: transparent;
+    margin: 12px 0 0; font: 500 clamp(26px, 5vw, 56px)/1.25 var(--font-letter); animation: cs-rise 1s var(--ease) .6s both;
+    background: linear-gradient(120deg, #8c2f55, #d6527c 45%, #f08aa6);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
 }
-#cake-screen-wrapper .cs-intro p { margin: 12px 0 0; font-size: clamp(13px, 1.5vw, 16px); font-weight: 600; color: var(--muted); animation: cs-rise 1s var(--ease) .78s both; }
+#cake-screen-wrapper .cs-intro p { margin: 10px 0 0; font-size: clamp(12px, 1.5vw, 16px); font-weight: 600; color: var(--muted); animation: cs-rise 1s var(--ease) .78s both; }
 #cake-screen-wrapper .cs-garden.is-growing .cs-intro { opacity: 0; transform: translateY(-16px); filter: blur(6px); }
 
 #cake-screen-wrapper .cs-bloom {
-    position: absolute; left: 50%; top: 46%; translate: -50% -50%; width: clamp(150px, 24vmin, 230px); aspect-ratio: 1;
-    border: 0; border-radius: 50%; background: transparent; cursor: pointer; outline: none;
+    position: absolute; left: 50%; top: 48%; translate: -50% -50%; width: clamp(130px, 22vmin, 220px); aspect-ratio: 1;
+    border: 0; border-radius: 50%; background: transparent; cursor: pointer; outline: none; z-index: 10;
     transition: opacity .6s var(--ease), scale .6s var(--ease);
 }
 #cake-screen-wrapper .cs-bloom::before, #cake-screen-wrapper .cs-bloom::after {
@@ -331,19 +349,26 @@ const STYLES = `
 #cake-screen-wrapper .cs-bloom.is-gone { opacity: 0; scale: 1.25; pointer-events: none; }
 #cake-screen-wrapper .cs-tap {
     position: absolute; left: 50%; bottom: -6px; translate: -50% 0; white-space: nowrap; padding: 8px 15px; border-radius: 999px;
-    font-size: 12px; font-weight: 700; color: var(--rose-deep); animation: cs-float 3.2s ease-in-out infinite;
+    font-size: 11.5px; font-weight: 700; color: var(--rose-deep); animation: cs-float 3.2s ease-in-out infinite;
 }
 
 #cake-screen-wrapper .cs-dock {
-    position: absolute; left: 50%; bottom: max(22px, env(safe-area-inset-bottom)); translate: -50% 28px;
-    width: min(92vw, 440px); padding: 18px 20px; border-radius: 30px; text-align: center; opacity: 0; pointer-events: none;
-    transition: opacity .8s var(--ease), translate .8s var(--ease);
+    position: absolute; 
+    left: 0; right: 0; margin: 0 auto; /* Căn giữa chuẩn Safari */
+    bottom: max(18px, env(safe-area-inset-bottom)); 
+    width: min(92vw, 440px); 
+    padding: 16px 18px; border-radius: 28px; text-align: center; opacity: 0; pointer-events: none; z-index: 15;
+    transform: translateY(28px);
+    transition: opacity .8s var(--ease), transform .8s var(--ease);
 }
-#cake-screen-wrapper .cs-garden.is-growing .cs-dock { opacity: 1; translate: -50% 0; }
+#cake-screen-wrapper .cs-garden.is-growing .cs-dock { 
+    opacity: 1; 
+    transform: translateY(0); 
+}
 #cake-screen-wrapper .cs-garden.is-ready .cs-dock { pointer-events: auto; }
-#cake-screen-wrapper .cs-status { margin: 0; min-height: 1.5em; font: italic 500 clamp(14px, 1.8vw, 17px)/1.5 var(--font-letter); }
+#cake-screen-wrapper .cs-status { margin: 0; min-height: 1.5em; font: italic 500 clamp(13px, 1.8vw, 17px)/1.5 var(--font-letter); }
 #cake-screen-wrapper .cs-status.is-swap { animation: cs-rise .6s var(--ease) both; }
-#cake-screen-wrapper .cs-bar { height: 6px; margin-top: 14px; border-radius: 99px; overflow: hidden; background: rgba(224,101,140,.18); transition: opacity .5s, height .5s, margin .5s; }
+#cake-screen-wrapper .cs-bar { height: 6px; margin-top: 12px; border-radius: 99px; overflow: hidden; background: rgba(224,101,140,.18); transition: opacity .5s, height .5s, margin .5s; }
 #cake-screen-wrapper .cs-bar i {
     display: block; height: 100%; border-radius: inherit; transform-origin: left; transform: scaleX(var(--p, 0));
     background: linear-gradient(90deg, #ffb3c8, #e0658c, #ffb3c8); background-size: 200% 100%; animation: cs-sheen 2s linear infinite;
@@ -352,7 +377,7 @@ const STYLES = `
 #cake-screen-wrapper .cs-next-wrap { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .7s var(--ease), opacity .6s; }
 #cake-screen-wrapper .cs-next-wrap > div { min-height: 0; overflow: hidden; visibility: hidden; padding: 0 8px; }
 #cake-screen-wrapper .cs-garden.is-ready .cs-next-wrap { grid-template-rows: 1fr; opacity: 1; }
-#cake-screen-wrapper .cs-garden.is-ready .cs-next-wrap > div { visibility: visible; padding: 16px 8px 12px; }
+#cake-screen-wrapper .cs-garden.is-ready .cs-next-wrap > div { visibility: visible; padding: 14px 8px 10px; }
 
 /* ---------- Cake (screen 2) ---------- */
 #cake-screen-wrapper .cs-cake { position: absolute; inset: 0; z-index: 10; }
@@ -362,45 +387,51 @@ const STYLES = `
     background: radial-gradient(ellipse at 50% 52%, rgba(30,8,40,0) 22%, rgba(30,8,40,.82) 100%);
 }
 #cake-screen-wrapper .cs-stepper {
-    position: absolute; top: max(18px, env(safe-area-inset-top)); left: 50%; translate: -50% 0; padding: 9px 18px; border-radius: 999px;
-    font-size: 13px; font-weight: 700; color: var(--rose-deep); white-space: nowrap; pointer-events: none;
+    position: absolute; top: max(16px, env(safe-area-inset-top)); left: 50%; translate: -50% 0; padding: 8px 16px; border-radius: 999px;
+    font-size: 12px; font-weight: 700; color: var(--rose-deep); white-space: nowrap; pointer-events: none; z-index: 15;
 }
 #cake-screen-wrapper .cs-panel {
-    position: absolute; left: 50%; bottom: max(20px, env(safe-area-inset-bottom)); translate: -50% 0; width: min(92vw, 420px);
-    padding: 22px 22px 24px; border-radius: 32px; text-align: center;
+    position: absolute; 
+    left: 0; right: 0; margin: 0 auto; /* Căn giữa chuẩn Safari */
+    bottom: max(18px, env(safe-area-inset-bottom)); 
+    width: min(92vw, 420px);
+    padding: 20px 20px 22px; border-radius: 28px; text-align: center; z-index: 15;
 }
-#cake-screen-wrapper .cs-panel-title { margin: 0; font: 600 clamp(19px, 2.4vw, 22px)/1.35 var(--font-letter); }
-#cake-screen-wrapper .cs-panel-sub { margin: 6px 0 16px; font-size: 13.5px; font-weight: 600; color: var(--muted); }
-#cake-screen-wrapper .cs-wish-title { margin: 6px 0 0; font: 400 clamp(36px, 7vw, 48px)/1.1 var(--font-script); color: var(--rose-deep); }
-#cake-screen-wrapper .cs-ring { position: relative; width: 74px; height: 74px; margin: 0 auto; display: grid; place-items: center; font-size: 26px; }
+#cake-screen-wrapper .cs-panel-title { margin: 0; font: 600 clamp(18px, 2.4vw, 22px)/1.35 var(--font-letter); }
+#cake-screen-wrapper .cs-panel-sub { margin: 6px 0 14px; font-size: 13px; font-weight: 600; color: var(--muted); }
+#cake-screen-wrapper .cs-wish-title { margin: 4px 0 0; font: 400 clamp(32px, 6.5vw, 48px)/1.1 var(--font-script); color: var(--rose-deep); }
+#cake-screen-wrapper .cs-ring { position: relative; width: 68px; height: 68px; margin: 0 auto; display: grid; place-items: center; font-size: 24px; }
 #cake-screen-wrapper .cs-ring svg { position: absolute; inset: 0; transform: rotate(-90deg); }
 #cake-screen-wrapper .cs-ring circle { fill: none; stroke-width: 5; stroke-linecap: round; }
 #cake-screen-wrapper .cs-ring .track { stroke: rgba(224,101,140,.2); }
 #cake-screen-wrapper .cs-ring .fill { stroke: var(--rose); stroke-dasharray: 213.6; stroke-dashoffset: 213.6; filter: drop-shadow(0 0 6px rgba(224,101,140,.6)); }
 
 #cake-screen-wrapper .cs-finale {
-    position: absolute; inset: 0; z-index: 30; display: grid; place-items: center; padding: 20px; opacity: 0; pointer-events: none; overflow: hidden;
+    position: absolute; inset: 0; z-index: 30; display: grid; place-items: center; padding: 16px; opacity: 0; pointer-events: none; overflow: hidden;
     background: radial-gradient(ellipse at 50% 38%, rgba(255,176,205,.5), rgba(120,30,75,.9) 78%);
     -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); transition: opacity 1.2s var(--ease);
 }
 #cake-screen-wrapper .cs-finale.is-on { opacity: 1; pointer-events: auto; }
 #cake-screen-wrapper .cs-finale-card {
-    position: relative; width: min(100%, 580px); padding: clamp(28px, 5vw, 50px) clamp(20px, 4vw, 44px); border-radius: 38px; text-align: center; color: #ffe9f1;
+    position: relative; width: min(100%, 560px); padding: clamp(24px, 5vw, 46px) clamp(18px, 4vw, 40px); border-radius: 34px; text-align: center; color: #ffe9f1;
     background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.38); box-shadow: 0 34px 80px -24px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.4);
+    -webkit-transform: translateZ(0); transform: translateZ(0);
 }
-#cake-screen-wrapper .cs-finale-eyebrow { margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: .3em; color: #ffc4d8; }
 #cake-screen-wrapper .cs-finale h2 {
-    margin: 0 0 10px; font: 400 clamp(54px, 11vw, 100px)/1.05 var(--font-script); color: transparent; -webkit-background-clip: text; background-clip: text;
+    margin: 0 0 10px; font: 400 clamp(42px, 10vw, 92px)/1.05 var(--font-script); color: transparent;
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
     background-image: linear-gradient(100deg, #fff 0%, #ffd1e1 35%, #fff3c4 55%, #ffd1e1 75%, #fff 100%); background-size: 200% 100%;
     animation: cs-sheen 5s linear infinite; filter: drop-shadow(0 0 18px rgba(255,170,200,.7));
 }
-#cake-screen-wrapper .cs-finale-sub { margin: 0 0 28px; font: italic 400 clamp(13px, 1.7vw, 16px)/1.6 var(--font-letter); letter-spacing: .12em; color: #ffd9e6; }
+#cake-screen-wrapper .cs-finale-sub { margin: 0 0 24px; font: italic 400 clamp(12px, 1.7vw, 16px)/1.6 var(--font-letter); letter-spacing: .12em; color: #ffd9e6; }
 #cake-screen-wrapper .cs-fh { position: absolute; bottom: -12%; color: #ff9fbd; opacity: 0; pointer-events: none; animation: cs-heart-up linear infinite; }
 #cake-screen-wrapper .cs-confetti { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 50; pointer-events: none; }
 #cake-screen-wrapper .cs-flash { position: absolute; inset: 0; z-index: 70; opacity: 0; pointer-events: none; background: radial-gradient(circle, #fff, #ffd6e6); }
 #cake-screen-wrapper .cs-iris {
-    position: absolute; inset: 0; z-index: 60; display: none; place-items: center; clip-path: circle(0% at 50% 62%);
+    position: absolute; inset: 0; z-index: 60; display: none; place-items: center;
+    -webkit-clip-path: circle(0% at 50% 62%); clip-path: circle(0% at 50% 62%);
     background: radial-gradient(circle at 50% 42%, #ffe9f1, #ffb9d0 55%, #f08aae);
+    -webkit-transform: translateZ(0); transform: translateZ(0);
 }
 #cake-screen-wrapper .cs-iris span { font-size: 64px; animation: cs-spin 6s linear infinite; filter: drop-shadow(0 6px 14px rgba(184,62,104,.4)); }
 
@@ -412,10 +443,48 @@ const STYLES = `
 @keyframes cs-pulse { 0%,100% { box-shadow: 0 12px 28px -10px rgba(198,75,112,.7), 0 0 0 0 rgba(224,101,140,.45), inset 0 1px 0 rgba(255,255,255,.55); } 50% { box-shadow: 0 12px 28px -10px rgba(198,75,112,.7), 0 0 0 14px rgba(224,101,140,0), inset 0 1px 0 rgba(255,255,255,.55); } }
 @keyframes cs-heart-up { 0% { transform: translateY(0) scale(.6) rotate(0); opacity: 0; } 12% { opacity: .85; } 100% { transform: translateY(-125vh) scale(1.1) rotate(24deg); opacity: 0; } }
 
+/* =============================================================================
+   RESPONSIVE MEDIA QUERIES FOR SMALL/SHORT SCREENS
+   ============================================================================= */
 @media (max-width: 520px) {
     #cake-screen-wrapper .cs-date span { display: none; }
-    #cake-screen-wrapper .cs-date { padding: 6px; }
+    #cake-screen-wrapper .cs-date { padding: 5px; }
 }
+
+@media (max-height: 680px) {
+    #cake-screen-wrapper .cs-intro { top: clamp(65px, 12vh, 110px); }
+    #cake-screen-wrapper .cs-intro h1 { font-size: clamp(22px, 4vw, 36px); margin-top: 6px; }
+    #cake-screen-wrapper .cs-intro p { display: none; }
+    #cake-screen-wrapper .cs-bloom { top: 50%; width: clamp(110px, 18vmin, 160px); }
+    #cake-screen-wrapper .cs-dock,
+    #cake-screen-wrapper .cs-panel { padding: 12px 16px; bottom: max(10px, env(safe-area-inset-bottom)); }
+    #cake-screen-wrapper .cs-panel-title { font-size: 16px; }
+    #cake-screen-wrapper .cs-panel-sub { margin: 4px 0 10px; font-size: 12px; }
+    #cake-screen-wrapper .cs-wish-title { font-size: clamp(26px, 5vw, 36px); }
+    #cake-screen-wrapper .cs-ring { width: 54px; height: 54px; font-size: 20px; }
+    #cake-screen-wrapper .cs-btn { padding: 10px 20px; font-size: 13px; }
+    #cake-screen-wrapper .cs-finale-card { padding: 20px 16px; }
+    #cake-screen-wrapper .cs-finale h2 { font-size: clamp(36px, 8vw, 64px); }
+}
+
+@media (max-height: 520px) {
+    #cake-screen-wrapper .cs-header { top: 8px; }
+    #cake-screen-wrapper .cs-dedication, #cake-screen-wrapper .cs-date { padding: 4px 12px; font-size: 12px; }
+    #cake-screen-wrapper .cs-intro { display: none; }
+    #cake-screen-wrapper .cs-stepper { top: 8px; font-size: 11px; padding: 4px 12px; }
+    #cake-screen-wrapper .cs-dock, #cake-screen-wrapper .cs-panel {
+        width: min(92vw, 360px);
+        padding: 10px 14px;
+    }
+}
+
+@media (max-width: 380px) {
+    #cake-screen-wrapper .cs-header { left: 8px; right: 8px; gap: 6px; }
+    #cake-screen-wrapper .cs-dedication { padding: 8px 12px; font-size: 12px; }
+    #cake-screen-wrapper .cs-date b { min-width: 42px; height: 36px; font-size: 13px; }
+    #cake-screen-wrapper .cs-btn { padding: 12px 20px; font-size: 13px; }
+}
+
 #cake-screen-wrapper.cs-reduced *, #cake-screen-wrapper.cs-reduced *::before, #cake-screen-wrapper.cs-reduced *::after { animation-duration: .001s !important; animation-iteration-count: 1 !important; transition-duration: .001s !important; }
 `;
 
@@ -713,7 +782,7 @@ export class CakeScreen {
         if (!rect.width || !rect.height) return;
         this.gardenWidth = rect.width;
         this.gardenHeight = rect.height;
-        this.gardenScale = Math.min(1.22, Math.max(0.68, this.gardenWidth / 1100));
+        this.gardenScale = Math.min(1.22, Math.max(0.55, Math.min(this.gardenWidth / 1000, this.gardenHeight / 700)));
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
         this.gardenCanvas.width = Math.round(this.gardenWidth * dpr);
         this.gardenCanvas.height = Math.round(this.gardenHeight * dpr);
@@ -732,7 +801,7 @@ export class CakeScreen {
         this.setStatus(GROW_STAGES[0][1]);
         this.gardenStage = 0;
         this.spawnBurst(this.hero.x * this.gardenWidth, this.hero.y * this.gardenHeight, 34);
-        this.hero.vel = 0.1; // Giảm lực giật khi bộc phát
+        this.hero.vel = 0.1;
         this.render2DFrame();
     }
 
@@ -860,14 +929,12 @@ export class CakeScreen {
         return 0.2 + 0.15 * Math.sin(time * 0.0003) * Math.sin(time * 0.0005 + 1.3);
     }
 
-    // Cơ chế gió nhẹ nhàng (Đã giảm hẳn biên độ lắc)
     updateSway(f, time, dt, riseT) {
         if (this.prefersReducedMotion) { f.ang = 0; f.vel = 0; return 0; }
         const gust = this.gustAt(time);
         const wave = Math.sin(time * 0.0012 - f.x * 4 + (f.depth || 0) * 0.2);
         const flutter = Math.sin(time * 0.0025 + f.phase);
 
-        // Đã giảm đáng kể hệ số biên độ góc lắc
         let target = (wave * 0.035 + flutter * 0.015) * (0.8 + gust) + 0.015 * gust;
         target += (1 - riseT) * Math.sin(time * 0.005 + f.phase) * 0.02;
 
@@ -875,7 +942,6 @@ export class CakeScreen {
         f.ang = f.ang || 0;
         f.vel = f.vel || 0;
 
-        // Tăng lực cản (damping) lên 5.5 để hoa chuyển động đầm, không bị giật hay lắc quá đà
         f.vel += ((target - f.ang) * 12 - f.vel * 5.5) * h;
         f.ang += f.vel * h;
         return f.ang;
@@ -946,7 +1012,7 @@ export class CakeScreen {
             });
         }
         ctx.translate(headX, headY);
-        ctx.rotate(f.rotation + ang * 0.3 + f.offsetX * 0.003); // Giảm tác động góc nghiêng đến đầu hoa
+        ctx.rotate(f.rotation + ang * 0.3 + f.offsetX * 0.003);
 
         const breath = this.prefersReducedMotion ? 1 : 1 + Math.sin(time * 0.0014 + f.phase) * 0.005;
         const s = (0.35 + 0.65 * p) * breath * (1 + f.hover * 0.05);
@@ -1146,14 +1212,14 @@ export class CakeScreen {
         const tl = this.track(gsap.timeline({ defaults: { ease: 'power2.inOut' } }));
         tl.set(iris, { display: 'grid', pointerEvents: 'auto' }, 0)
             .to(this.gardenEl, { scale: 1.06, duration: 1.2 * k }, 0)
-            .fromTo(iris, { clipPath: 'circle(0% at 50% 62%)' }, { clipPath: 'circle(150% at 50% 62%)', duration: 1.1 * k }, 0)
+            .fromTo(iris, { webkitClipPath: 'circle(0% at 50% 62%)', clipPath: 'circle(0% at 50% 62%)' }, { webkitClipPath: 'circle(150% at 50% 62%)', clipPath: 'circle(150% at 50% 62%)', duration: 1.1 * k }, 0)
             .call(() => {
                 this.gardenEl.style.display = 'none';
                 if (this.gardenAnimationFrameId) cancelAnimationFrame(this.gardenAnimationFrameId);
                 this.cakeContainer.hidden = false;
                 this.initThreeJS();
             }, null, 1.2 * k)
-            .to(iris, { clipPath: 'circle(0% at 50% 40%)', duration: 1.0 * k }, 1.5 * k)
+            .to(iris, { webkitClipPath: 'circle(0% at 50% 40%)', clipPath: 'circle(0% at 50% 40%)', duration: 1.0 * k }, 1.5 * k)
             .call(() => this.playEntranceSequence(), null, 1.75 * k)
             .set(iris, { display: 'none', pointerEvents: 'none' });
     }
@@ -1165,6 +1231,7 @@ export class CakeScreen {
         if (this.renderer) return;
         const w = this.cakeContainer.clientWidth || window.innerWidth;
         const h = this.cakeContainer.clientHeight || window.innerHeight;
+        const aspect = w / h;
         const isMobile = w < 768;
 
         this.scene = new THREE.Scene();
@@ -1172,7 +1239,22 @@ export class CakeScreen {
         this.scene.fog = new THREE.FogExp2(0xf0bdd3, 0.0075);
         this.fogBase = this.scene.fog.color.clone();
 
-        this.camera = new THREE.PerspectiveCamera(isMobile ? 65 : 45, w / h, 0.1, 100);
+        let camZ = isMobile ? 48 : 35;
+        let camY = isMobile ? 10 : 7;
+        let fov = isMobile ? 65 : 45;
+
+        if (aspect < 0.6) {
+            camZ = 52;
+            camY = 11;
+            fov = 70;
+        } else if (h < 550) {
+            camZ = 32;
+            camY = 6;
+            fov = 40;
+        }
+
+        this.cameraBasePos.set(0, camY, camZ);
+        this.camera = new THREE.PerspectiveCamera(fov, aspect, 0.1, 100);
         this.camPos = { x: this.cameraBasePos.x, y: this.cameraBasePos.y + (this.prefersReducedMotion ? 0 : 4) };
         this.camera.position.set(this.camPos.x, this.camPos.y, this.cameraBasePos.z + (this.prefersReducedMotion ? 0 : 16));
 
@@ -1181,11 +1263,17 @@ export class CakeScreen {
             canvas: this.globalCanvas || undefined, alpha: true, antialias: true, powerPreference: 'high-performance'
         });
         this.renderer.setSize(w, h);
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
         this.renderer.toneMappingExposure = 0.95;
+
+        // Safari Context Loss Handler
+        this.renderer.domElement.addEventListener('webglcontextlost', (e) => {
+            e.preventDefault();
+            if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
+        }, false);
 
         if (!this.globalCanvas) this.threeCanvas.appendChild(this.renderer.domElement);
         else this.globalCanvas.style.display = 'block';
@@ -1216,7 +1304,10 @@ export class CakeScreen {
         this.lights.dirLight.position.set(6, 12, 8);
         this.lights.dirLight.castShadow = true;
         const sh = this.lights.dirLight.shadow;
-        sh.mapSize.set(isMobile ? 1024 : 2048, isMobile ? 1024 : 2048);
+
+        // Tuned shadow map resolution for mobile WebKit memory limits
+        const shadowRes = isMobile ? 512 : 1024;
+        sh.mapSize.set(shadowRes, shadowRes);
         sh.camera.left = -12; sh.camera.right = 12; sh.camera.top = 16; sh.camera.bottom = -6;
         sh.camera.near = 1; sh.camera.far = 50;
         sh.bias = -0.0005; sh.radius = 4;
@@ -1881,7 +1972,7 @@ export class CakeScreen {
         });
 
         this.flowers.forEach(f => {
-            f.rotation.x = f.userData.tilt + Math.sin(time * 0.8 + f.userData.offset) * 0.025; // Giảm góc xoay lắc của hoa 3D
+            f.rotation.x = f.userData.tilt + Math.sin(time * 0.8 + f.userData.offset) * 0.025;
             f.rotation.z = Math.cos(time * 0.7 + f.userData.offset) * 0.025;
         });
 
@@ -1910,10 +2001,10 @@ export class CakeScreen {
     bindEvents() {
         this.bloomBtn.addEventListener('click', () => this.startGarden());
         this.nextBtn.addEventListener('click', () => this.transitionTo3DCake());
-        this.gardenEl.addEventListener('pointermove', this.handleGardenPointerMove);
-        this.gardenEl.addEventListener('pointerdown', this.handleGardenPointerDown);
-        this.gardenEl.addEventListener('pointerleave', this.handleGardenPointerLeave);
-        this.gardenEl.addEventListener('pointerup', this.handleGardenPointerUp);
+        this.gardenEl.addEventListener('pointermove', this.handleGardenPointerMove, { passive: true });
+        this.gardenEl.addEventListener('pointerdown', this.handleGardenPointerDown, { passive: true });
+        this.gardenEl.addEventListener('pointerleave', this.handleGardenPointerLeave, { passive: true });
+        this.gardenEl.addEventListener('pointerup', this.handleGardenPointerUp, { passive: true });
 
         this.btnLight.addEventListener('click', () => {
             if (this.isCandleLit) return;
@@ -1929,7 +2020,7 @@ export class CakeScreen {
 
         window.addEventListener('resize', this.handleResize);
         window.addEventListener('orientationchange', this.handleResize);
-        window.addEventListener('pointermove', this.handlePointerMove);
+        window.addEventListener('pointermove', this.handlePointerMove, { passive: true });
         document.addEventListener('visibilitychange', this.handleVisibilityChange);
 
         if (typeof ResizeObserver !== 'undefined' && this.gardenEl) {
@@ -1948,16 +2039,33 @@ export class CakeScreen {
         if (!this.camera || !this.renderer || !this.cakeContainer) return;
         const w = this.cakeContainer.clientWidth || window.innerWidth;
         const h = this.cakeContainer.clientHeight || window.innerHeight;
+        const aspect = w / h;
         const isMobile = w < 768;
 
-        this.cameraBasePos.set(0, isMobile ? 10 : 7, isMobile ? 48 : 35);
-        this.camera.aspect = w / h;
-        this.camera.fov = isMobile ? 65 : 45;
+        let camZ = isMobile ? 48 : 35;
+        let camY = isMobile ? 10 : 7;
+        let fov = isMobile ? 65 : 45;
+
+        if (aspect < 0.6) {
+            camZ = 52;
+            camY = 11;
+            fov = 70;
+        } else if (h < 550) {
+            camZ = 32;
+            camY = 6;
+            fov = 40;
+        }
+
+        this.cameraBasePos.set(0, camY, camZ);
+        this.camera.aspect = aspect;
+        this.camera.fov = fov;
         this.camera.updateProjectionMatrix();
+
+        const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
         this.renderer.setSize(w, h);
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+        this.renderer.setPixelRatio(dpr);
         if (this.composer) {
-            this.composer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+            this.composer.setPixelRatio(dpr);
             this.composer.setSize(w, h);
         }
     }

@@ -6,12 +6,7 @@ import '../styles/video-anniversary.css';
 import { BackButton } from './BackButton';
 import '../styles/back-button.css';
 
-// ------------------------------------------------------------------
-// Concept: "One Moment, One Video" — chỉ một video trung tâm làm
-// điểm nhấn duy nhất, không gallery/điều hướng. Toàn bộ style riêng
-// cho layout mới được inject scoped dưới #video-anniversary-container
-// nên không phụ thuộc / không phá vỡ video-anniversary.css gốc.
-// ------------------------------------------------------------------
+
 const VA_ENHANCED_STYLE_ID = 'va-enhanced-styles';
 const VA_ENHANCED_STYLE = `
 #video-anniversary-container {
@@ -399,7 +394,7 @@ export class VideoAnniversary {
       <div class="cinema-dim-overlay"></div>
 
       <div class="hero-stage" id="hero-stage">
-        <span class="va-sparkle-deco" style="top: 10%; left: 8%; animation-delay: 0s;">✨</span>
+        <span class="va-sparkle-deco" style="top: 80%; right: 1%; animation-delay: 1.2s;">💖</span>
         <span class="va-sparkle-deco" style="top: 14%; right: 9%; animation-delay: 1.2s;">💖</span>
 
         <div class="hero-badge">OUR LITTLE CINEMA</div>

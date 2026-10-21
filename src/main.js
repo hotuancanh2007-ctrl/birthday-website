@@ -7,14 +7,9 @@ import { VideoAnniversary } from './components/VideoAnniversary.js';
 import { CakeScreen } from './components/CakeScreen.js';
 import { spawnMagicBurst } from './utils/magicBurst.js';
 import './styles/gift.css';
-
-// ----------------------------------------------------
-// 1. Cấu hình Audio & Nhạc nền
-// ----------------------------------------------------
-// Đổi đường dẫn '/bgm.mp3' thành đường dẫn file nhạc của bạn
-const bgm = new Audio('./assets/audio/No One Noticed.mp3');
+const bgm = new Audio('./assets/audio/vũ trụ ngừng trôi (HITStory Live Version).mp3');
 bgm.loop = true;      // Lặp lại bài hát
-bgm.volume = 0.5;     // Âm lượng từ 0.0 đến 1.0
+bgm.volume = 0.5;
 
 let isMusicPlaying = false;
 
@@ -232,8 +227,16 @@ function handleGalaxyContinue() {
 
       setStage('video-cinema');
 
-      // Tùy chọn: Tạm dừng nhạc nền khi trình chiếu video kỷ niệm nếu video có âm thanh riêng
-      // bgm.pause();
+      // --------------------------------------------------
+      // TẮT NHẠC NỀN KHI VÀO MÀN HÌNH VIDEO
+      // --------------------------------------------------
+      if (!bgm.paused) {
+        bgm.pause();
+        isMusicPlaying = false;
+        const btn = document.getElementById('music-toggle-btn');
+        if (btn) btn.classList.remove('playing');
+      }
+      // --------------------------------------------------
 
       videoScreen = new VideoAnniversary();
       videoScreen.mount(appContainer);
@@ -242,7 +245,6 @@ function handleGalaxyContinue() {
     },
   });
 }
-
 function handleReplayAll() {
   const flash = document.getElementById('cinematic-flash');
 
@@ -315,6 +317,16 @@ function transitionToCakeScreen() {
       }
 
       setStage('cake-ceremony');
+
+      // --------------------------------------------------
+      // BẬT LẠI NHẠC NỀN KHI SANG MÀN HÌNH BÁNH SINH NHẬT
+      // --------------------------------------------------
+      bgm.play().then(() => {
+        isMusicPlaying = true;
+        const btn = document.getElementById('music-toggle-btn');
+        if (btn) btn.classList.add('playing');
+      }).catch((err) => console.log('Không thể tự động phát nhạc:', err));
+      // --------------------------------------------------
 
       cakeScreen = new CakeScreen(appContainer, {
         onComplete: () => {
