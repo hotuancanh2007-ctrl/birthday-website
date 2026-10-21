@@ -534,7 +534,6 @@ const TEMPLATE = `
         </section>
         <div class="cs-finale" id="finale-overlay" aria-hidden="true">
             <div class="cs-finale-card" id="finale-content">
-                <p class="cs-finale-eyebrow">20 · 10</p>
                 <h2 id="finale-message">Điều Ước Của Em Sẽ Thành Hiện Thật♡♡♡</h2>
                 <p class="cs-finale-sub">Lèeeeeeee</p>
                 <button class="cs-btn cs-btn--ghost" id="btn-replay" type="button">Coi Lại Nò ♡</button>

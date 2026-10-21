@@ -414,8 +414,8 @@ export class VideoAnniversary {
         </div>
 
         <div class="hero-info">
-          <h1 id="hero-title" class="hero-title va-gradient-text">${vid.title || 'Khung Hình Tình Yêu'}</h1>
-          <p id="hero-desc" class="hero-desc">${vid.date || ''}</p>
+          <h1 id="hero-title" class="hero-title va-gradient-text">${vid.title || 'Rạp Bi Gieo'}</h1>
+          <p id="hero-desc" class="hero-desc">Chiếu vào 02/11/2026</p>
         </div>
 
         <div class="hero-controls-row">
