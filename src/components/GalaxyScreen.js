@@ -53,7 +53,7 @@ export class GalaxyScreen {
     this.cameraDistance = 18;
     this.targetDistance = 18;
     this.minDistance = 8;
-    this.maxDistance = 35;
+    this.maxDistance = 45;
     this.minPitch = -0.6;
     this.maxPitch = 0.6;
     this.rotateSensitivity = 0.005;
@@ -83,18 +83,19 @@ export class GalaxyScreen {
     this.element = document.createElement('div');
     this.element.id = 'screen-galaxy';
 
-    // Đảm bảo tràn màn hình hoàn toàn trên Safari iOS
+    // Đảm bảo tràn màn hình hoàn toàn trên Safari iOS & tránh xé màu background
     this.element.style.position = 'fixed';
     this.element.style.top = '0';
     this.element.style.left = '0';
     this.element.style.width = '100vw';
     this.element.style.height = '100vh'; // Fallback trình duyệt cũ
     this.element.style.height = '100dvh'; // Chuẩn mới cho Safari iOS
+    this.element.style.backgroundColor = '#160a2e'; // Đặt màu nền cố định đồng nhất
     this.element.style.overflow = 'hidden';
     this.element.style.zIndex = '10';
 
     this.element.innerHTML = `
-      <canvas id="galaxy-canvas" aria-label="Thiên hà kỷ niệm 3D"></canvas>
+      <canvas id="galaxy-canvas" style="display:block; width:100%; height:100%;" aria-label="Thiên hà kỷ niệm 3D"></canvas>
       <div class="galaxy-dust" aria-hidden="true"></div>
       <div class="galaxy-hud">
         <h2 class="galaxy-title">Thiên Hà Kỷ Niệm♡♡♡</h2>
@@ -145,11 +146,20 @@ export class GalaxyScreen {
   _initThree() {
     const canvas = this.element.querySelector('#galaxy-canvas');
 
-    // Lấy chiều rộng/cao thực tế từ container đã định dạng dvh
     const w = this.element.clientWidth || window.innerWidth;
     const h = this.element.clientHeight || window.innerHeight;
+    const aspect = w / h;
 
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
+    // Fix lỗi vỡ/bẻ màu background trên di động:
+    // 1. alpha: false giúp loại bỏ lỗi dải mảng màu 8-bit trên GPU di động
+    // 2. precision: 'highp' đảm bảo độ chính xác màu cao nhất
+    this.renderer = new THREE.WebGLRenderer({
+      canvas,
+      antialias: true,
+      alpha: false,
+      precision: 'highp',
+      powerPreference: "high-performance"
+    });
     this.renderer.setSize(w, h);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setClearColor(0x160a2e, 1);
@@ -160,8 +170,13 @@ export class GalaxyScreen {
     this.scene = new THREE.Scene();
     this.scene.fog = new THREE.FogExp2(0x1e1040, 0.012);
 
-    this.camera = new THREE.PerspectiveCamera(55, w / h, 0.1, 300);
-    this.camera.position.set(0, 0, 18);
+    // Tính toán khoảng cách camera mặc định phù hợp với cả màn hình dọc mobile
+    const baseDist = aspect < 1 ? 18 / Math.max(aspect, 0.55) : 18;
+    this.cameraDistance = baseDist;
+    this.targetDistance = baseDist;
+
+    this.camera = new THREE.PerspectiveCamera(55, aspect, 0.1, 300);
+    this.camera.position.set(0, 0, baseDist);
     this.cameraTarget = new THREE.Vector3(0, 0, 0);
   }
 
@@ -174,14 +189,12 @@ export class GalaxyScreen {
   }
 
   _buildMultiLayerCosmos() {
-    // Deep twinkling pastel stars — several layers, each with its own hue mix,
-    // size and twinkle rhythm so the whole sky shimmers instead of sitting static.
     const starPalette = [
-      [1.0, 0.78, 0.9],   // magenta-pink
-      [0.85, 0.75, 1.0],  // deep lavender
-      [0.7, 0.68, 1.0],   // midnight periwinkle
-      [1.0, 0.9, 0.97],   // soft pink-white
-      [1.0, 1.0, 1.0],    // pure white sparkle
+      [1.0, 0.78, 0.9],
+      [0.85, 0.75, 1.0],
+      [0.7, 0.68, 1.0],
+      [1.0, 0.9, 0.97],
+      [1.0, 1.0, 1.0],
     ];
     const starLayerCount = 6;
     const starsPerLayer = Math.round(420 * this._perfScale);
@@ -224,7 +237,6 @@ export class GalaxyScreen {
     }
     this.deepStars = this.starLayers[0];
 
-    // Glowing Nebula Sprites
     const nebulaGeo = new THREE.PlaneGeometry(80, 80);
     const nebulaColors = [0x6b3fa0, 0xc13584, 0xffc1e0, 0x2c3e7a, 0xd9b8ff];
     this.nebulas = [];
@@ -264,7 +276,6 @@ export class GalaxyScreen {
 
     const segDetail = this._isLowPower ? 20 : 32;
 
-    // Lõi trái tim vũ trụ — thay cho mặt trời, tỏa sáng dịu dàng ở trung tâm
     const coreGeo = new THREE.SphereGeometry(0.62, segDetail, segDetail);
     const coreMat = new THREE.MeshStandardMaterial({
       color: 0xffb3e0, emissive: 0xff6fb8, emissiveIntensity: 1.1,
@@ -287,13 +298,12 @@ export class GalaxyScreen {
     this.coreStar.add(coreLight);
     this.coreLight = coreLight;
 
-    // Bảng màu hành tinh: tím vũ trụ, magenta, xanh đêm, hồng phấn, lavender
     const planetPalette = [
-      { base: 0x6b3fa0, emissive: 0x3a1f5c, atmo: 0xc9a8f0 }, // tím vũ trụ
-      { base: 0xc13584, emissive: 0x5c1f44, atmo: 0xffb3d9 }, // magenta
-      { base: 0x2c3e7a, emissive: 0x16203f, atmo: 0x8ea3ff }, // xanh đêm
-      { base: 0xe897c4, emissive: 0x6b3350, atmo: 0xffd6ec }, // hồng phấn
-      { base: 0x9f7fe0, emissive: 0x3f2d66, atmo: 0xd8c2ff }, // lavender
+      { base: 0x6b3fa0, emissive: 0x3a1f5c, atmo: 0xc9a8f0 },
+      { base: 0xc13584, emissive: 0x5c1f44, atmo: 0xffb3d9 },
+      { base: 0x2c3e7a, emissive: 0x16203f, atmo: 0x8ea3ff },
+      { base: 0xe897c4, emissive: 0x6b3350, atmo: 0xffd6ec },
+      { base: 0x9f7fe0, emissive: 0x3f2d66, atmo: 0xd8c2ff },
     ];
 
     const planetConfigs = [
@@ -340,7 +350,6 @@ export class GalaxyScreen {
       pivot.add(planet);
       this.disposables.push(planetGeo, planetMat);
 
-      // Khí quyển phát sáng mềm mại quanh hành tinh
       const atmoGeo = new THREE.SphereGeometry(cfg.radius * 1.22, segDetail, segDetail);
       const atmoMat = new THREE.MeshBasicMaterial({
         color: palette.atmo, transparent: true, opacity: 0.3,
@@ -350,21 +359,18 @@ export class GalaxyScreen {
       planet.add(atmo);
       this.disposables.push(atmoGeo, atmoMat);
 
-      // Vành đai thanh lịch cho một vài hành tinh
-      let ring = null;
       if (cfg.hasRing) {
         const ringGeo = new THREE.RingGeometry(cfg.radius * 1.6, cfg.radius * 2.5, 64);
         const ringMat = new THREE.MeshBasicMaterial({
           map: getRingTexture(), color: palette.atmo, transparent: true, opacity: 0.6,
           side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending
         });
-        ring = new THREE.Mesh(ringGeo, ringMat);
+        const ring = new THREE.Mesh(ringGeo, ringMat);
         ring.rotation.x = Math.PI / 2.3;
         planet.add(ring);
         this.disposables.push(ringGeo, ringMat);
       }
 
-      // Đường quỹ đạo mảnh, tinh tế làm điểm nhấn thị giác
       const orbitPoints = [];
       const orbitSegs = this._isLowPower ? 64 : 96;
       for (let s = 0; s <= orbitSegs; s++) {
@@ -378,12 +384,11 @@ export class GalaxyScreen {
       this.solarSystem.add(orbitLine);
       this.disposables.push(orbitGeo, orbitMat);
 
-      this.planets.push({ pivot, planet, ring, speed: cfg.speed, spinSpeed: 0.15 + Math.random() * 0.2 });
+      this.planets.push({ pivot, planet, speed: cfg.speed, spinSpeed: 0.15 + Math.random() * 0.2 });
     });
   }
 
   _buildMagicalDecorations() {
-    // Floating Hearts
     const heartCvs = document.createElement('canvas');
     heartCvs.width = 64; heartCvs.height = 64;
     const hctx = heartCvs.getContext('2d');
@@ -425,7 +430,6 @@ export class GalaxyScreen {
     this.scene.add(this.hearts);
     this.disposables.push(heartTex, heartGeo, heartMat, this.hearts);
 
-    // Cherry Blossom Petals — two pastel tones drifting together for more depth
     const petalPalette = [
       { fill: 'rgba(255, 190, 225, 0.85)', shadow: 'rgba(193, 53, 132, 0.5)' },
       { fill: 'rgba(216, 180, 255, 0.85)', shadow: 'rgba(107, 63, 160, 0.5)' },
@@ -469,8 +473,6 @@ export class GalaxyScreen {
       return { mesh, data };
     });
 
-    // Twinkling sparkle dust — small four-point glints that blink in and out,
-    // scattered closer to the camera path for an extra layer of magic.
     const sparkleCvs = document.createElement('canvas');
     sparkleCvs.width = 64; sparkleCvs.height = 64;
     const sctx = sparkleCvs.getContext('2d');
@@ -677,7 +679,6 @@ export class GalaxyScreen {
     dir2.position.set(-15, -10, 10);
     this.scene.add(dir2);
 
-    // Ánh sáng viền magenta mờ ảo cho chiều sâu điện ảnh
     const rimLight = new THREE.DirectionalLight(0xc13584, 0.55);
     rimLight.position.set(0, -12, -14);
     this.scene.add(rimLight);
@@ -800,7 +801,6 @@ export class GalaxyScreen {
       this._cometTimer = 3.2 + Math.random() * 4;
     }
 
-    // Hệ mặt trời thu nhỏ: quỹ đạo, tự quay, lõi "ngôi sao trái tim" thở nhẹ
     if (this.planets.length) {
       this.planets.forEach((p) => {
         p.pivot.rotation.y += p.speed * delta;
@@ -1037,16 +1037,28 @@ export class GalaxyScreen {
     if (e.key === 'Escape') this._closeModal();
   }
 
-  // Tối ưu lại _onResize duy nhất và chính xác cho Safari
+  // Tối ưu lại _onResize duy nhất, hỗ trợ màn hình dọc mobile
   _onResize() {
     if (!this.renderer || !this.camera || !this.element) return;
 
     const w = this.element.clientWidth || window.innerWidth;
     const h = this.element.clientHeight || window.innerHeight;
+    if (w === 0 || h === 0) return;
 
-    this.camera.aspect = w / h;
+    const aspect = w / h;
+    this.camera.aspect = aspect;
     this.camera.updateProjectionMatrix();
+
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setSize(w, h);
+
+    // Tự động điều chỉnh khoảng cách quan sát nếu xoay sang màn hình dọc (Mobile Portrait)
+    if (aspect < 1) {
+      const adjustedDist = 18 / Math.max(aspect, 0.55);
+      if (Math.abs(this.targetDistance - this.cameraDistance) < 2) {
+        this.targetDistance = adjustedDist;
+      }
+    }
   }
 
   _setupModal() {
