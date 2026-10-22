@@ -53,7 +53,7 @@ export class GalaxyScreen {
     this.cameraDistance = 18;
     this.targetDistance = 18;
     this.minDistance = 8;
-    this.maxDistance = 45;
+    this.maxDistance = 35;
     this.minPitch = -0.6;
     this.maxPitch = 0.6;
     this.rotateSensitivity = 0.005;
@@ -83,14 +83,13 @@ export class GalaxyScreen {
     this.element = document.createElement('div');
     this.element.id = 'screen-galaxy';
 
-    // Đảm bảo tràn màn hình hoàn toàn trên Safari iOS & tránh xé màu background
     this.element.style.position = 'fixed';
     this.element.style.top = '0';
     this.element.style.left = '0';
     this.element.style.width = '100vw';
-    this.element.style.height = '100vh'; // Fallback trình duyệt cũ
-    this.element.style.height = '100dvh'; // Chuẩn mới cho Safari iOS
-    this.element.style.backgroundColor = '#160a2e'; // Đặt màu nền cố định đồng nhất
+    this.element.style.height = '100vh';
+    this.element.style.height = '100dvh';
+    this.element.style.backgroundColor = '#160a2e';
     this.element.style.overflow = 'hidden';
     this.element.style.zIndex = '10';
 
@@ -150,9 +149,6 @@ export class GalaxyScreen {
     const h = this.element.clientHeight || window.innerHeight;
     const aspect = w / h;
 
-    // Fix lỗi vỡ/bẻ màu background trên di động:
-    // 1. alpha: false giúp loại bỏ lỗi dải mảng màu 8-bit trên GPU di động
-    // 2. precision: 'highp' đảm bảo độ chính xác màu cao nhất
     this.renderer = new THREE.WebGLRenderer({
       canvas,
       antialias: true,
@@ -161,7 +157,9 @@ export class GalaxyScreen {
       powerPreference: "high-performance"
     });
     this.renderer.setSize(w, h);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // Hỗ trợ hiển thị điểm ảnh tối đa cho các dòng điện thoại màn hình Retina/OLED (tối đa 3x)
+    const dpr = Math.min(window.devicePixelRatio || 1, 3);
+    this.renderer.setPixelRatio(dpr);
     this.renderer.setClearColor(0x160a2e, 1);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -170,13 +168,10 @@ export class GalaxyScreen {
     this.scene = new THREE.Scene();
     this.scene.fog = new THREE.FogExp2(0x1e1040, 0.012);
 
-    // Tính toán khoảng cách camera mặc định phù hợp với cả màn hình dọc mobile
-    const baseDist = aspect < 1 ? 18 / Math.max(aspect, 0.55) : 18;
-    this.cameraDistance = baseDist;
-    this.targetDistance = baseDist;
-
-    this.camera = new THREE.PerspectiveCamera(55, aspect, 0.1, 300);
-    this.camera.position.set(0, 0, baseDist);
+    // Dùng Dynamic FOV để mở rộng góc quan sát ở màn hình dọc mobile thay vì lùi camera làm nhòe vật thể
+    const fov = aspect < 1 ? Math.min(80, 55 / Math.max(aspect, 0.5)) : 55;
+    this.camera = new THREE.PerspectiveCamera(fov, aspect, 0.1, 300);
+    this.camera.position.set(0, 0, 18);
     this.cameraTarget = new THREE.Vector3(0, 0, 0);
   }
 
@@ -565,21 +560,22 @@ export class GalaxyScreen {
   }
 
   _makePolaroidMesh(w, h, memory, idx) {
+    // Tăng độ phân giải 2D Canvas lên gấp đôi (1024x1280) giúp chữ & ảnh trên thẻ nét căng
     const cvs = document.createElement('canvas');
-    cvs.width = 512;
-    cvs.height = 640;
+    cvs.width = 1024;
+    cvs.height = 1280;
     const ctx = cvs.getContext('2d');
 
-    const rr = 12;
+    const rr = 24;
     ctx.fillStyle = '#fff6fa';
-    this._roundRect(ctx, 0, 0, 512, 640, rr);
+    this._roundRect(ctx, 0, 0, 1024, 1280, rr);
     ctx.shadowColor = 'rgba(0,0,0,0.12)';
-    ctx.shadowBlur = 20;
+    ctx.shadowBlur = 40;
     ctx.fill();
     ctx.shadowColor = 'transparent';
 
-    const photoH = 410;
-    const margin = 24;
+    const photoH = 820;
+    const margin = 48;
     const gradients = [
       ['#ffc2de', '#ffe3f0'],
       ['#e3c2ff', '#ffdcf2'],
@@ -588,33 +584,36 @@ export class GalaxyScreen {
       ['#ffcae5', '#e9d4ff'],
     ];
     const [c1, c2] = gradients[idx % gradients.length];
-    const gr = ctx.createLinearGradient(margin, margin, 512 - margin, photoH);
+    const gr = ctx.createLinearGradient(margin, margin, 1024 - margin, photoH);
     gr.addColorStop(0, c1);
     gr.addColorStop(1, c2);
     ctx.fillStyle = gr;
-    this._roundRect(ctx, margin, margin, 512 - margin * 2, photoH, 6);
+    this._roundRect(ctx, margin, margin, 1024 - margin * 2, photoH, 12);
     ctx.fill();
 
-    ctx.font = 'bold 80px serif';
+    ctx.font = 'bold 160px serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     const icons = ['🌸', '✨', '💖', '🦋', '💌'];
-    ctx.fillText(icons[idx % icons.length], 256, margin + photoH / 2);
+    ctx.fillText(icons[idx % icons.length], 512, margin + photoH / 2);
 
     ctx.fillStyle = '#4a2a52';
-    ctx.font = 'bold 26px "Playfair Display", Georgia, serif';
+    ctx.font = 'bold 52px "Playfair Display", Georgia, serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
-    const lines = this._wrapText(ctx, memory.title, 440, 30);
+    const lines = this._wrapText(ctx, memory.title, 880, 60);
     lines.forEach((line, li) => {
-      ctx.fillText(line, 256, photoH + margin + 30 + li * 34);
+      ctx.fillText(line, 512, photoH + margin + 60 + li * 68);
     });
 
     ctx.fillStyle = '#c285a8';
-    ctx.font = 'italic 18px Georgia, serif';
-    ctx.fillText(memory.date, 256, photoH + margin + 115);
+    ctx.font = 'italic 36px Georgia, serif';
+    ctx.fillText(memory.date, 512, photoH + margin + 230);
 
     const tex = new THREE.CanvasTexture(cvs);
+    tex.generateMipmaps = true;
+    tex.minFilter = THREE.LinearMipmapLinearFilter;
+    tex.magFilter = THREE.LinearFilter;
     tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
 
     const geo = new THREE.PlaneGeometry(w, h);
@@ -1037,7 +1036,6 @@ export class GalaxyScreen {
     if (e.key === 'Escape') this._closeModal();
   }
 
-  // Tối ưu lại _onResize duy nhất, hỗ trợ màn hình dọc mobile
   _onResize() {
     if (!this.renderer || !this.camera || !this.element) return;
 
@@ -1047,18 +1045,15 @@ export class GalaxyScreen {
 
     const aspect = w / h;
     this.camera.aspect = aspect;
+
+    // Tự động điều chỉnh góc nhìn FOV khi thay đổi kích thước/xoay màn hình
+    this.camera.fov = aspect < 1 ? Math.min(80, 55 / Math.max(aspect, 0.5)) : 55;
     this.camera.updateProjectionMatrix();
 
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // Cập nhật Pixel Ratio tối đa khi xoay màn hình
+    const dpr = Math.min(window.devicePixelRatio || 1, 3);
+    this.renderer.setPixelRatio(dpr);
     this.renderer.setSize(w, h);
-
-    // Tự động điều chỉnh khoảng cách quan sát nếu xoay sang màn hình dọc (Mobile Portrait)
-    if (aspect < 1) {
-      const adjustedDist = 18 / Math.max(aspect, 0.55);
-      if (Math.abs(this.targetDistance - this.cameraDistance) < 2) {
-        this.targetDistance = adjustedDist;
-      }
-    }
   }
 
   _setupModal() {
