@@ -260,8 +260,7 @@ export class GalaxyScreen {
     nebulaColors.forEach((color, i) => {
       const mat = new THREE.MeshBasicMaterial({
         color, map: nebulaTex, transparent: true, opacity: 0.18,
-        depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
-        dithering: true
+        depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide
       });
       const mesh = new THREE.Mesh(nebulaGeo, mat);
       mesh.position.set((Math.random() - 0.5) * 44, (Math.random() - 0.5) * 32, -34 + i * 7);
@@ -293,8 +292,7 @@ export class GalaxyScreen {
     const coreGlowGeo = new THREE.SphereGeometry(1.0, segDetail, segDetail);
     const coreGlowMat = new THREE.MeshBasicMaterial({
       color: 0xff9ed6, transparent: true, opacity: 0.28,
-      blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.BackSide,
-      dithering: true
+      blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.BackSide
     });
     const coreGlow = new THREE.Mesh(coreGlowGeo, coreGlowMat);
     this.coreStar.add(coreGlow);
@@ -361,8 +359,7 @@ export class GalaxyScreen {
       const atmoGeo = new THREE.SphereGeometry(cfg.radius * 1.22, segDetail, segDetail);
       const atmoMat = new THREE.MeshBasicMaterial({
         color: palette.atmo, transparent: true, opacity: 0.3,
-        blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.BackSide,
-        dithering: true
+        blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.BackSide
       });
       const atmo = new THREE.Mesh(atmoGeo, atmoMat);
       planet.add(atmo);
@@ -372,8 +369,7 @@ export class GalaxyScreen {
         const ringGeo = new THREE.RingGeometry(cfg.radius * 1.6, cfg.radius * 2.5, 64);
         const ringMat = new THREE.MeshBasicMaterial({
           map: getRingTexture(), color: palette.atmo, transparent: true, opacity: 0.6,
-          side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending,
-          dithering: true
+          side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending
         });
         const ring = new THREE.Mesh(ringGeo, ringMat);
         ring.rotation.x = Math.PI / 2.3;
