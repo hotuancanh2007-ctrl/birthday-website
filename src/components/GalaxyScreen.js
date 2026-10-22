@@ -157,7 +157,7 @@ export class GalaxyScreen {
       powerPreference: "high-performance"
     });
     this.renderer.setSize(w, h);
-    // Hỗ trợ hiển thị điểm ảnh tối đa cho các dòng điện thoại màn hình Retina/OLED (tối đa 3x)
+
     const dpr = Math.min(window.devicePixelRatio || 1, 3);
     this.renderer.setPixelRatio(dpr);
     this.renderer.setClearColor(0x160a2e, 1);
@@ -168,7 +168,6 @@ export class GalaxyScreen {
     this.scene = new THREE.Scene();
     this.scene.fog = new THREE.FogExp2(0x1e1040, 0.012);
 
-    // Dùng Dynamic FOV để mở rộng góc quan sát ở màn hình dọc mobile thay vì lùi camera làm nhòe vật thể
     const fov = aspect < 1 ? Math.min(80, 55 / Math.max(aspect, 0.5)) : 55;
     this.camera = new THREE.PerspectiveCamera(fov, aspect, 0.1, 300);
     this.camera.position.set(0, 0, 18);
@@ -215,9 +214,9 @@ export class GalaxyScreen {
       starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
       starGeo.setAttribute('color', new THREE.BufferAttribute(starColor, 3));
 
-      const baseSize = 0.08 + layer * 0.03;
+      const baseSize = 0.1 + layer * 0.035;
       const starMat = new THREE.PointsMaterial({
-        size: baseSize, vertexColors: true, transparent: true, opacity: 0.55,
+        size: baseSize, vertexColors: true, transparent: true, opacity: 0.6,
         sizeAttenuation: true, blending: THREE.AdditiveBlending, depthWrite: false
       });
       const points = new THREE.Points(starGeo, starMat);
@@ -236,21 +235,31 @@ export class GalaxyScreen {
     const nebulaColors = [0x6b3fa0, 0xc13584, 0xffc1e0, 0x2c3e7a, 0xd9b8ff];
     this.nebulas = [];
 
+    // Nâng cấp độ phân giải Canvas Nebula từ 256 lên 1024x1024 nét căng đét
     const canvas = document.createElement('canvas');
-    canvas.width = 256; canvas.height = 256;
+    canvas.width = 1024; canvas.height = 1024;
     const ctx = canvas.getContext('2d');
-    const grad = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+    const grad = ctx.createRadialGradient(512, 512, 0, 512, 512, 512);
+
+    // Chuyển màu mịn 6 nấc gradient - loại bỏ hoàn toàn xé dải màu / banding trên mobile
     grad.addColorStop(0, 'rgba(255,255,255,1)');
-    grad.addColorStop(0.2, 'rgba(255,255,255,0.6)');
+    grad.addColorStop(0.18, 'rgba(255,255,255,0.75)');
+    grad.addColorStop(0.4, 'rgba(255,255,255,0.4)');
+    grad.addColorStop(0.65, 'rgba(255,255,255,0.18)');
+    grad.addColorStop(0.85, 'rgba(255,255,255,0.05)');
     grad.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 256, 256);
+    ctx.fillRect(0, 0, 1024, 1024);
+
     const nebulaTex = new THREE.CanvasTexture(canvas);
+    nebulaTex.generateMipmaps = true;
+    nebulaTex.minFilter = THREE.LinearMipmapLinearFilter;
+    nebulaTex.magFilter = THREE.LinearFilter;
     this.disposables.push(nebulaTex, nebulaGeo);
 
     nebulaColors.forEach((color, i) => {
       const mat = new THREE.MeshBasicMaterial({
-        color, map: nebulaTex, transparent: true, opacity: 0.15,
+        color, map: nebulaTex, transparent: true, opacity: 0.18,
         depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide
       });
       const mesh = new THREE.Mesh(nebulaGeo, mat);
@@ -269,7 +278,7 @@ export class GalaxyScreen {
     this.solarSystem.position.set(0, -0.5, -2);
     this.scene.add(this.solarSystem);
 
-    const segDetail = this._isLowPower ? 20 : 32;
+    const segDetail = this._isLowPower ? 24 : 36;
 
     const coreGeo = new THREE.SphereGeometry(0.62, segDetail, segDetail);
     const coreMat = new THREE.MeshStandardMaterial({
@@ -313,16 +322,18 @@ export class GalaxyScreen {
     const getRingTexture = () => {
       if (ringTex) return ringTex;
       const cvs = document.createElement('canvas');
-      cvs.width = 128; cvs.height = 16;
+      cvs.width = 256; cvs.height = 32;
       const ctx = cvs.getContext('2d');
-      const grad = ctx.createLinearGradient(0, 0, 128, 0);
+      const grad = ctx.createLinearGradient(0, 0, 256, 0);
       grad.addColorStop(0, 'rgba(255,214,240,0)');
       grad.addColorStop(0.35, 'rgba(255,214,240,0.75)');
       grad.addColorStop(0.65, 'rgba(216,194,255,0.55)');
       grad.addColorStop(1, 'rgba(255,214,240,0)');
       ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, 128, 16);
+      ctx.fillRect(0, 0, 256, 32);
       ringTex = new THREE.CanvasTexture(cvs);
+      ringTex.generateMipmaps = true;
+      ringTex.minFilter = THREE.LinearMipmapLinearFilter;
       this.disposables.push(ringTex);
       return ringTex;
     };
@@ -385,20 +396,21 @@ export class GalaxyScreen {
 
   _buildMagicalDecorations() {
     const heartCvs = document.createElement('canvas');
-    heartCvs.width = 64; heartCvs.height = 64;
+    heartCvs.width = 128; heartCvs.height = 128;
     const hctx = heartCvs.getContext('2d');
-    hctx.translate(32, 24);
+    hctx.translate(64, 48);
     hctx.beginPath();
-    hctx.moveTo(0, 8);
-    hctx.bezierCurveTo(0, -12, -24, -12, -24, 8);
-    hctx.bezierCurveTo(-24, 24, 0, 34, 0, 40);
-    hctx.bezierCurveTo(0, 34, 24, 24, 24, 8);
-    hctx.bezierCurveTo(24, -12, 0, -12, 0, 8);
+    hctx.moveTo(0, 16);
+    hctx.bezierCurveTo(0, -24, -48, -24, -48, 16);
+    hctx.bezierCurveTo(-48, 48, 0, 68, 0, 80);
+    hctx.bezierCurveTo(0, 68, 48, 48, 48, 16);
+    hctx.bezierCurveTo(48, -24, 0, -24, 0, 16);
     hctx.fillStyle = '#ffc6e2';
     hctx.shadowColor = '#ff9ecf';
-    hctx.shadowBlur = 14;
+    hctx.shadowBlur = 20;
     hctx.fill();
     const heartTex = new THREE.CanvasTexture(heartCvs);
+    heartTex.generateMipmaps = true;
 
     const heartCount = Math.round(28 * this._perfScale);
     const heartGeo = new THREE.PlaneGeometry(0.8, 0.8);
@@ -431,15 +443,16 @@ export class GalaxyScreen {
     ];
     this.petalGroups = petalPalette.map((palette) => {
       const petalCvs = document.createElement('canvas');
-      petalCvs.width = 32; petalCvs.height = 32;
+      petalCvs.width = 64; petalCvs.height = 64;
       const pctx = petalCvs.getContext('2d');
       pctx.beginPath();
-      pctx.ellipse(16, 16, 6, 12, Math.PI / 4, 0, Math.PI * 2);
+      pctx.ellipse(32, 32, 12, 24, Math.PI / 4, 0, Math.PI * 2);
       pctx.fillStyle = palette.fill;
       pctx.shadowColor = palette.shadow;
-      pctx.shadowBlur = 5;
+      pctx.shadowBlur = 10;
       pctx.fill();
       const petalTex = new THREE.CanvasTexture(petalCvs);
+      petalTex.generateMipmaps = true;
 
       const petalCount = Math.round(36 * this._perfScale);
       const petalGeo = new THREE.PlaneGeometry(0.5, 0.5);
@@ -469,26 +482,27 @@ export class GalaxyScreen {
     });
 
     const sparkleCvs = document.createElement('canvas');
-    sparkleCvs.width = 64; sparkleCvs.height = 64;
+    sparkleCvs.width = 128; sparkleCvs.height = 128;
     const sctx = sparkleCvs.getContext('2d');
-    sctx.translate(32, 32);
-    const sparkleGrad = sctx.createRadialGradient(0, 0, 0, 0, 0, 30);
+    sctx.translate(64, 64);
+    const sparkleGrad = sctx.createRadialGradient(0, 0, 0, 0, 0, 60);
     sparkleGrad.addColorStop(0, 'rgba(255,255,255,1)');
     sparkleGrad.addColorStop(0.3, 'rgba(255,214,240,0.9)');
     sparkleGrad.addColorStop(1, 'rgba(255,214,240,0)');
     sctx.fillStyle = sparkleGrad;
     sctx.beginPath();
-    sctx.moveTo(0, -30);
-    sctx.lineTo(7, -7);
-    sctx.lineTo(30, 0);
-    sctx.lineTo(7, 7);
-    sctx.lineTo(0, 30);
-    sctx.lineTo(-7, 7);
-    sctx.lineTo(-30, 0);
-    sctx.lineTo(-7, -7);
+    sctx.moveTo(0, -60);
+    sctx.lineTo(14, -14);
+    sctx.lineTo(60, 0);
+    sctx.lineTo(14, 14);
+    sctx.lineTo(0, 60);
+    sctx.lineTo(-14, 14);
+    sctx.lineTo(-60, 0);
+    sctx.lineTo(-14, -14);
     sctx.closePath();
     sctx.fill();
     const sparkleTex = new THREE.CanvasTexture(sparkleCvs);
+    sparkleTex.generateMipmaps = true;
 
     const sparkleCount = Math.round(45 * this._perfScale);
     const sparkleGeo = new THREE.PlaneGeometry(0.6, 0.6);
@@ -560,7 +574,6 @@ export class GalaxyScreen {
   }
 
   _makePolaroidMesh(w, h, memory, idx) {
-    // Tăng độ phân giải 2D Canvas lên gấp đôi (1024x1280) giúp chữ & ảnh trên thẻ nét căng
     const cvs = document.createElement('canvas');
     cvs.width = 1024;
     cvs.height = 1280;
@@ -693,28 +706,28 @@ export class GalaxyScreen {
 
     if (!this._cometTexture) {
       const cvs = document.createElement('canvas');
-      cvs.width = 128; cvs.height = 32;
+      cvs.width = 256; cvs.height = 64;
       const ctx = cvs.getContext('2d');
-      const grad = ctx.createLinearGradient(0, 0, 128, 0);
+      const grad = ctx.createLinearGradient(0, 0, 256, 0);
       grad.addColorStop(0, 'rgba(193,53,132,0)');
       grad.addColorStop(0.55, 'rgba(216,180,255,0.75)');
       grad.addColorStop(0.85, 'rgba(255,214,235,0.9)');
       grad.addColorStop(1, 'rgba(255,255,255,1)');
       ctx.fillStyle = grad;
-      ctx.fillRect(0, 8, 128, 16);
+      ctx.fillRect(0, 16, 256, 32);
       this._cometTexture = new THREE.CanvasTexture(cvs);
       this.disposables.push(this._cometTexture);
     }
     if (!this._cometHeadTexture) {
       const hcvs = document.createElement('canvas');
-      hcvs.width = 32; hcvs.height = 32;
+      hcvs.width = 64; hcvs.height = 64;
       const hctx = hcvs.getContext('2d');
-      const hgrad = hctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+      const hgrad = hctx.createRadialGradient(32, 32, 0, 32, 32, 32);
       hgrad.addColorStop(0, 'rgba(255,255,255,1)');
       hgrad.addColorStop(0.4, 'rgba(255,214,240,0.9)');
       hgrad.addColorStop(1, 'rgba(255,214,240,0)');
       hctx.fillStyle = hgrad;
-      hctx.fillRect(0, 0, 32, 32);
+      hctx.fillRect(0, 0, 64, 64);
       this._cometHeadTexture = new THREE.CanvasTexture(hcvs);
       this.disposables.push(this._cometHeadTexture);
     }
@@ -1046,11 +1059,9 @@ export class GalaxyScreen {
     const aspect = w / h;
     this.camera.aspect = aspect;
 
-    // Tự động điều chỉnh góc nhìn FOV khi thay đổi kích thước/xoay màn hình
     this.camera.fov = aspect < 1 ? Math.min(80, 55 / Math.max(aspect, 0.5)) : 55;
     this.camera.updateProjectionMatrix();
 
-    // Cập nhật Pixel Ratio tối đa khi xoay màn hình
     const dpr = Math.min(window.devicePixelRatio || 1, 3);
     this.renderer.setPixelRatio(dpr);
     this.renderer.setSize(w, h);
