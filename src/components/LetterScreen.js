@@ -7,7 +7,7 @@ import '../styles/back-button.css';
 import '../styles/letter.css';
 
 /**
- * LetterScreen — Stage 2: The Birthday Letter (Safari & Mobile Fully Responsive Edition)
+ * LetterScreen — Stage 2: The Birthday Letter (Clean Text Render & Ultra Reliable Edition)
  */
 export class LetterScreen {
   constructor(parentElement, options = {}) {
@@ -29,34 +29,46 @@ export class LetterScreen {
     this.floatingHearts = [];
     this.particleSystem = null;
 
-    // Pagination
+    // Gestures & Pagination
     this.initPages();
     this.currentPageIndex = 0;
-
-    // Swipe gesture tracking
     this.touchStartX = 0;
     this.touchStartY = 0;
 
-    // Bound listeners for clean removal
+    // Bound listeners for clean cleanup
     this._pointerMoveBound = null;
     this._pointerUpBound = null;
     this._pointerCancelBound = null;
     this._onResizeBound = null;
+
+    this.prefersReducedMotion = false;
   }
 
-  // ─── INITIALISE PAGES ──────────────────────────────────────────────────────
+  dur(seconds) {
+    return seconds;
+  }
+
+  // ─── INIT PAGES (TỰ ĐỘNG KHÔI PHỤC NẾU DỮ LIỆU RỖNG) ───────────────────────
 
   initPages() {
+    const defaultParagraphs = [
+      'Chúc mừng sinh nhật em yêu! Cảm ơn em đã đến bên anh, mang theo vô vàn niềm vui, sự ấm áp và vô số khoảnh khắc hạnh phúc tuyệt vời.',
+      'Anh mong rằng tuổi mới sẽ mang đến cho em thật nhiều may mắn, luôn mỉm cười rạng rỡ và đạt được tất cả những điều em ước mơ.',
+      'Hành trình phía trước dù có ra sao, anh vẫn luôn ở đây đồng hành, chăm sóc và yêu thương em thật nhiều. Chúc em một ngày sinh nhật thật trọn vẹn và ý nghĩa ♡'
+    ];
+
     const letter = birthdayData?.letter || {};
+    const paras = Array.isArray(letter.paragraphs) && letter.paragraphs.length > 0
+      ? letter.paragraphs
+      : defaultParagraphs;
 
     if (Array.isArray(letter.pages) && letter.pages.length > 0) {
       this.pages = letter.pages;
     } else {
-      const paras = Array.isArray(letter.paragraphs) ? letter.paragraphs : [];
       if (paras.length > 2) {
         this.pages = [
-          { pageNumber: 1, subtitle: 'Chúc Mừng Sinh Nhật Em Yêu', paragraphs: paras.slice(0, 2) },
-          { pageNumber: 2, subtitle: 'Hành trình yêu thương phía trước', paragraphs: paras.slice(2) },
+          { pageNumber: 1, subtitle: 'Chúc Mừng Sinh Nhật Em Yêu ✨', paragraphs: paras.slice(0, 2) },
+          { pageNumber: 2, subtitle: 'Hành trình yêu thương phía trước 🌸', paragraphs: paras.slice(2) },
         ];
       } else {
         this.pages = [{ pageNumber: 1, subtitle: '', paragraphs: paras }];
@@ -71,25 +83,28 @@ export class LetterScreen {
 
     this.element = document.createElement('div');
     this.element.id = 'screen-letter';
-    this.element.style.position = 'fixed';
-    this.element.style.inset = '0';
-    this.element.style.width = '100vw';
 
-    // Tương thích chiều cao màn hình tuyệt đối trên Safari iOS
-    this.element.style.minHeight = '100vh';
-    this.element.style.minHeight = '100dvh';
-    this.element.style.minHeight = '-webkit-fill-available';
+    Object.assign(this.element.style, {
+      position: 'fixed',
+      inset: '0',
+      width: '100vw',
+      height: '100vh',
+      minHeight: '100dvh',
+      overflow: 'hidden',
+      display: 'flex',
+      flexDirection: 'column',
+      WebkitFontSmoothing: 'antialiased',
+      background: 'transparent'
+    });
 
-    this.element.style.overflow = 'hidden';
-    this.element.style.display = 'flex';
-    this.element.style.flexDirection = 'column';
-    this.element.style.webkitFontSmoothing = 'antialiased';
-
+    const recipientName = birthdayData?.recipient?.nickname || birthdayData?.recipient?.name || 'Bé meo';
+    const letterTitle = birthdayData?.letter?.title || 'Happy Birthday vợ eooo ♡';
+    const letterDate = birthdayData?.letter?.date || 'Ngày 02 tháng 11 năm 2026';
     const peekingText = this.pages[0]?.paragraphs[0] || 'Chúc mừng sinh nhật em yêu...';
 
     this.element.innerHTML = `
       <!-- Three.js Canvas Background -->
-      <canvas id="letter-three-bg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0;"></canvas>
+      <canvas id="letter-three-bg" style="position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0;"></canvas>
 
       <!-- Ambient floating decorations -->
       <div class="letter-ambient-layer" aria-hidden="true" style="position: relative; z-index: 1; pointer-events: none;">
@@ -102,78 +117,67 @@ export class LetterScreen {
       </div>
 
       <!-- ── HEADER ── -->
-      <header class="letter-header" id="letter-header" style="position: relative; z-index: 2;">
-        <div class="letter-badge"> THE BIRTHDAY BÉ IU 🌸🌸🌸 </div>
-        <h2 class="letter-title">${birthdayData?.letter?.title || 'Happy Birthday'}</h2>
-        <p class="letter-subtitle">${birthdayData?.recipient?.nickname || 'Bé meo'} • ${birthdayData?.letter?.date || ''}</p>
+      <header class="letter-header modern-header" id="letter-header" style="position: relative; z-index: 2; text-align: center; padding-top: 4vh;">
+        <div class="letter-badge glass-badge" style="display: inline-block; padding: 6px 16px; border-radius: 20px; background: rgba(255,255,255,0.75); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.9); font-size: 0.8rem; font-weight: 600; color: #d6336c; margin-bottom: 10px; box-shadow: 0 4px 15px rgba(214, 51, 108, 0.15);"> THE BIRTHDAY BÉ IU 🌸 </div>
+        <h2 class="letter-title" style="font-size: 2.2rem; font-weight: 800; color: #343a40; letter-spacing: -0.5px; margin: 0;">${letterTitle}</h2>
+        <p class="letter-subtitle" style="color: #6c757d; font-weight: 500; margin-top: 6px;">${recipientName} • ${letterDate}</p>
       </header>
 
       <!-- ── ENVELOPE AREA ── -->
-      <main class="envelope-area" id="envelope-area" style="position: relative; z-index: 2;">
-        <div class="envelope-wrapper" id="envelope-wrapper">
-          <div class="envelope-box">
+      <main class="envelope-area" id="envelope-area" style="position: relative; z-index: 2; flex: 1; display: flex; align-items: center; justify-content: center; perspective: 1000px;">
+        <div class="envelope-wrapper" id="envelope-wrapper" style="transform-style: preserve-3d;">
+          <div class="envelope-box shadow-xl" style="box-shadow: 0 20px 40px rgba(0,0,0,0.08);">
+            
             <div class="vintage-stamp" aria-hidden="true">
-              <span class="stamp-inner">🌸</span>
-              <span class="stamp-label">POST</span>
+              <span class="stamp-inner">🌸</span><span class="stamp-label">POST</span>
             </div>
+            <div class="postmark-circle" aria-hidden="true"><span>SPECIAL</span></div>
 
-            <div class="postmark-circle" aria-hidden="true">
-              <span>SPECIAL</span>
-            </div>
-
-            <div class="draggable-letter-sheet" id="draggable-letter-sheet" role="button" aria-label="Kéo lá thư lên để mở" style="touch-action: none;">
+            <div class="draggable-letter-sheet glass-sheet" id="draggable-letter-sheet" role="button" aria-label="Kéo lá thư lên để mở" style="touch-action: none; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px);">
               <div class="pull-tab">
-                <span>▲</span>
-                <span>Kéo lá thư lên ♡</span>
+                <span>▲</span><span>Kéo lá thư lên ♡</span>
               </div>
-              <div class="peeking-title">${birthdayData?.letter?.title || ''}</div>
-              <div class="peeking-snippet">${peekingText}</div>
+              <div class="peeking-title">${letterTitle}</div>
+              <div class="peeking-snippet" style="opacity: 0.8; color: #495057;">${peekingText}</div>
             </div>
 
             <div class="envelope-front-pocket" aria-hidden="true"></div>
             <div class="envelope-flap" id="envelope-flap" aria-hidden="true"></div>
 
-            <button class="wax-seal" id="wax-seal" aria-label="Chạm để mở niêm phong sáp">
+            <button class="wax-seal hover-scale" id="wax-seal" aria-label="Chạm để mở niêm phong sáp">
               <span class="wax-seal-heart" aria-hidden="true">♡</span>
             </button>
           </div>
         </div>
-
-        <div class="envelope-hint" id="envelope-hint">
-          <span class="envelope-hint-arrow" aria-hidden="true">💌</span>
-          <span>Chạm vào con dấu sáp hoặc kéo lá thư lên để mở ♡</span>
-        </div>
       </main>
 
-      <!-- ── LETTER READING CARD ── -->
-      <section class="letter-reading-card" id="letter-reading-card" aria-label="Nội dung bức thư sinh nhật" style="position: relative; z-index: 2; -webkit-overflow-scrolling: touch;">
-        <div class="reading-meta">
-          <span class="reading-date">${birthdayData?.letter?.date || ''}</span>
+      <!-- ── LETTER READING CARD (KHUNG ĐỌC THƯ THIẾT KẾ MỚI VÀ HIỂN THỊ VIẾT BẰNG CHỮ HIỆN ĐẠI) ── -->
+      <section class="letter-reading-card glass-card" id="letter-reading-card" aria-label="Nội dung bức thư" style="display: none; position: relative; z-index: 10; background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.8); border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.18); margin: auto; max-width: 650px; width: 90%; padding: 28px; flex-direction: column; max-height: 75dvh;">
+        <div class="reading-meta" style="border-bottom: 1px solid rgba(0,0,0,0.08); padding-bottom: 12px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+          <span class="reading-date" style="color: #868e96; font-size: 0.9rem; font-weight: 500;">${letterDate}</span>
           <div class="reading-page-indicator" id="reading-page-indicator"></div>
         </div>
 
-        <div class="letter-scrollable-content" id="letter-scrollable-content">
-          <div id="page-content-wrapper"></div>
+        <div class="letter-scrollable-content" id="letter-scrollable-content" style="overflow-y: auto; flex: 1; padding-right: 8px;">
+          <div id="page-content-wrapper" style="color: #2b2b2b; min-height: 150px;"></div>
         </div>
 
-        <div class="letter-pagination-controls" id="letter-pagination-controls"></div>
+        <div class="letter-pagination-controls" id="letter-pagination-controls" style="margin-top: 16px; display: flex; justify-content: space-between; gap: 10px;"></div>
 
-        <footer class="letter-footer-action">
-          <button class="btn-fold-back" id="btn-fold-back">
+        <footer class="letter-footer-action" style="margin-top: 12px; text-align: center;">
+          <button class="btn-fold-back glass-btn" id="btn-fold-back" style="background: rgba(0,0,0,0.05); border: none; padding: 10px 22px; border-radius: 30px; font-weight: 600; color: #495057; cursor: pointer; transition: all 0.3s ease;">
             <span>✉ Gập lại phong bì</span>
           </button>
         </footer>
       </section>
 
       <!-- ── CLOSING PANEL ── -->
-      <aside class="stage5-panel" id="stage5-panel" role="complementary" aria-label="Kết thúc bức thư" style="position: relative; z-index: 2;">
-        <span class="stage5-badge">💌 ♡ </span>
-        <h3 class="stage5-title">Em đã đọc đến cuối thư rồi...</h3>
-        <p class="stage5-desc">
-          Cảm ơn em vì đã dành thời gian đọc từng trang thư nhỏ này của anh♡
-        </p>
+      <aside class="stage5-panel glass-card" id="stage5-panel" style="display: none; position: relative; z-index: 12; text-align: center; padding: 35px 25px; background: rgba(255,255,255,0.95); backdrop-filter: blur(16px); border-radius: 28px; box-shadow: 0 30px 60px rgba(0,0,0,0.15); margin: auto; max-width: 500px; width: 90%; transform: translateY(20px); opacity: 0;">
+        <span class="stage5-badge" style="font-size: 3rem; display: block; margin-bottom: 10px;">💌</span>
+        <h3 class="stage5-title" style="font-size: 1.7rem; font-weight: 700; color: #212529; margin: 0;">Đã đọc đến cuối thư...</h3>
+        <p class="stage5-desc" style="color: #495057; margin: 12px 0 24px; line-height: 1.6;">Cảm ơn em vì đã dành thời gian đọc từng trang thư nhỏ này của anh ♡</p>
         <div class="stage5-actions">
-          <button class="btn-stage5-action primary" id="btn-stage5-continue">
+          <button class="btn-stage5-action primary modern-btn" id="btn-stage5-continue" style="background: linear-gradient(135deg, #ff758c 0%, #ff7eb3 100%); color: white; border: none; padding: 14px 32px; border-radius: 30px; font-size: 1.05rem; font-weight: 600; cursor: pointer; box-shadow: 0 10px 20px rgba(255, 117, 140, 0.3);">
             <span> Tiếp tục hoiiii meo ♡</span>
           </button>
         </div>
@@ -195,18 +199,13 @@ export class LetterScreen {
     this.setupInteractions();
     this.renderCurrentPageContent(false);
 
-    gsap.fromTo(
-      this.element,
-      { opacity: 0 },
-      { opacity: 1, duration: 0.85, ease: 'power2.out' }
-    );
-
+    gsap.fromTo(this.element, { opacity: 0 }, { opacity: 1, duration: 0.8, ease: 'power2.out' });
     const header = this.element.querySelector('#letter-header');
     const envelopeArea = this.element.querySelector('#envelope-area');
-    gsap.fromTo(
-      [header, envelopeArea],
-      { y: 28, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.95, stagger: 0.15, ease: 'power2.out', delay: 0.18 }
+
+    gsap.fromTo([header, envelopeArea],
+      { y: 30, opacity: 0 },
+      { y: 0, opacity: 1, duration: 1, stagger: 0.15, ease: 'power3.out', delay: 0.1 }
     );
   }
 
@@ -222,124 +221,93 @@ export class LetterScreen {
 
     this.threeScene = new THREE.Scene();
 
-    this.threeCamera = new THREE.PerspectiveCamera(isMobile ? 75 : 60, width / height, 0.1, 1000);
-    this.threeCamera.position.z = isMobile ? 22 : 15;
+    this.threeCamera = new THREE.PerspectiveCamera(isMobile ? 70 : 55, width / height, 0.1, 1000);
+    this.threeCamera.position.z = isMobile ? 24 : 18;
 
     this.threeRenderer = new THREE.WebGLRenderer({
       canvas: this.threeCanvas,
       alpha: true,
       antialias: true,
-      powerPreference: 'high-performance'
+      powerPreference: 'high-performance',
     });
     this.threeRenderer.setSize(width, height);
-    this.threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+    this.threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 
-    // Xử lý mất WebGL Context trên Safari
-    this.threeRenderer.domElement.addEventListener('webglcontextlost', (e) => {
-      e.preventDefault();
-      if (this.threeAnimId) cancelAnimationFrame(this.threeAnimId);
-    }, false);
-
-    const ambientLight = new THREE.AmbientLight(0xfff0f5, 1.2);
-    this.threeScene.add(ambientLight);
-
-    const dirLight = new THREE.DirectionalLight(0xffb6c1, 1.5);
-    dirLight.position.set(5, 10, 7);
-    this.threeScene.add(dirLight);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+    const hemiLight = new THREE.HemisphereLight(0xffe6f2, 0xe6f2ff, 1.5);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 2.0);
+    dirLight.position.set(10, 20, 15);
+    this.threeScene.add(ambientLight, hemiLight, dirLight);
 
     const heartGeometry = this.createHeartGeometry();
     const heartMaterials = [
-      new THREE.MeshStandardMaterial({ color: 0xffb3c6, roughness: 0.3, metalness: 0.1 }),
-      new THREE.MeshStandardMaterial({ color: 0xffc2d1, roughness: 0.2, metalness: 0.2 }),
+      new THREE.MeshStandardMaterial({ color: 0xff8fa3, roughness: 0.2, metalness: 0.2 }),
+      new THREE.MeshStandardMaterial({ color: 0xffb3c6, roughness: 0.15, metalness: 0.1 }),
+      new THREE.MeshStandardMaterial({ color: 0xffd700, roughness: 0.3, metalness: 0.6 })
     ];
 
     this.floatingHearts = [];
-    const heartCount = isMobile ? 8 : 18;
+    const heartCount = isMobile ? 14 : 28;
     for (let i = 0; i < heartCount; i++) {
-      const mat = heartMaterials[i % heartMaterials.length];
+      const mat = (i % 6 === 0) ? heartMaterials[2] : (i % 2 === 0 ? heartMaterials[0] : heartMaterials[1]);
       const mesh = new THREE.Mesh(heartGeometry, mat);
 
       mesh.position.set(
-        (Math.random() - 0.5) * 22,
-        (Math.random() - 0.5) * 18,
-        (Math.random() - 0.5) * 10 - 2
+        (Math.random() - 0.5) * 32,
+        (Math.random() - 0.5) * 26,
+        (Math.random() - 0.5) * 15 - 4
       );
 
       const scale = 0.35 + Math.random() * 0.55;
       mesh.scale.set(scale, scale, scale);
-      mesh.rotation.x = Math.random() * Math.PI;
-      mesh.rotation.y = Math.random() * Math.PI;
+      mesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
 
       mesh.userData = {
-        speedY: 0.003 + Math.random() * 0.005,
-        rotSpeedX: (Math.random() - 0.5) * 0.01,
-        rotSpeedY: (Math.random() - 0.5) * 0.01,
-        floatOffset: Math.random() * Math.PI * 2,
-        baseX: mesh.position.x,
+        speedY: 0.008 + Math.random() * 0.012,
+        rotSpeedX: (Math.random() - 0.5) * 0.02,
+        rotSpeedY: (Math.random() - 0.5) * 0.02,
       };
 
       this.threeScene.add(mesh);
       this.floatingHearts.push(mesh);
     }
 
-    const particleCount = isMobile ? 40 : 100;
+    const particleCount = isMobile ? 100 : 250;
     const particleGeo = new THREE.BufferGeometry();
-    const positions = new Float32Array(particleCount * 3);
-    const colors = new Float32Array(particleCount * 3);
-
-    const pastelColors = [
-      new THREE.Color('#ffb6c1'),
-      new THREE.Color('#ffd1dc'),
-      new THREE.Color('#fff0f5'),
-    ];
-
-    for (let i = 0; i < particleCount; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 25;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 20;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 12;
-
-      const col = pastelColors[Math.floor(Math.random() * pastelColors.length)];
-      colors[i * 3] = col.r;
-      colors[i * 3 + 1] = col.g;
-      colors[i * 3 + 2] = col.b;
-    }
-
-    particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    particleGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    const pos = new Float32Array(particleCount * 3);
+    for (let i = 0; i < particleCount * 3; i++) pos[i] = (Math.random() - 0.5) * 35;
+    particleGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
 
     const particleMat = new THREE.PointsMaterial({
-      size: 0.22,
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.75,
-      blending: THREE.AdditiveBlending,
+      color: 0xffa3b1, size: 0.2, transparent: true, opacity: 0.75, blending: THREE.AdditiveBlending, depthWrite: false
     });
-
     this.particleSystem = new THREE.Points(particleGeo, particleMat);
     this.threeScene.add(this.particleSystem);
 
     const animate = () => {
       this.threeAnimId = requestAnimationFrame(animate);
-      if (document.hidden || !this.threeScene || !this.threeRenderer) return;
+      if (!this.threeScene || !this.threeRenderer) return;
 
       this.floatingHearts.forEach(heart => {
         heart.position.y += heart.userData.speedY;
         heart.rotation.x += heart.userData.rotSpeedX;
         heart.rotation.y += heart.userData.rotSpeedY;
-        if (heart.position.y > 12) heart.position.y = -12;
+        if (heart.position.y > 15) heart.position.y = -15;
       });
+
+      if (this.particleSystem) {
+        this.particleSystem.rotation.y += 0.0008;
+        this.particleSystem.position.y = Math.sin(performance.now() * 0.0008) * 1.5;
+      }
 
       this.threeRenderer.render(this.threeScene, this.threeCamera);
     };
 
     animate();
 
-    let resizeTimeout;
-    this._onResizeBound = () => {
-      if (resizeTimeout) cancelAnimationFrame(resizeTimeout);
-      resizeTimeout = requestAnimationFrame(() => this.handleResize());
-    };
+    this._onResizeBound = () => this.handleResize();
     window.addEventListener('resize', this._onResizeBound, { passive: true });
+    window.addEventListener('orientationchange', this._onResizeBound, { passive: true });
   }
 
   createHeartGeometry() {
@@ -353,18 +321,14 @@ export class LetterScreen {
     shape.bezierCurveTo(x + 0.80, y, x + 0.50, y, x + 0.50, y);
     shape.bezierCurveTo(x + 0.35, y, x + 0.25, y + 0.25, x + 0.25, y + 0.25);
 
-    const extrudeSettings = {
-      depth: 0.1,
+    return new THREE.ExtrudeGeometry(shape, {
+      depth: 0.15,
       bevelEnabled: true,
-      bevelSegments: 2,
+      bevelSegments: 3,
       steps: 1,
-      bevelSize: 0.03,
-      bevelThickness: 0.03
-    };
-
-    const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-    geometry.center();
-    return geometry;
+      bevelSize: 0.04,
+      bevelThickness: 0.04
+    }).center();
   }
 
   handleResize() {
@@ -374,26 +338,15 @@ export class LetterScreen {
     const isMobile = width < 768;
 
     this.threeCamera.aspect = width / height;
-    this.threeCamera.fov = isMobile ? 75 : 60;
-    this.threeCamera.position.z = isMobile ? 22 : 15;
+    this.threeCamera.fov = isMobile ? 70 : 55;
+    this.threeCamera.position.z = isMobile ? 24 : 18;
     this.threeCamera.updateProjectionMatrix();
 
     this.threeRenderer.setSize(width, height);
-    this.threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+    this.threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   }
 
-  formatTextToSpans(text) {
-    if (text === undefined || text === null) return '';
-    const str = String(text);
-
-    return str.split('\n').map(line => {
-      const words = line.split(' ');
-      return words.map(word => {
-        if (!word) return '';
-        return `<span class="letter-char" style="display: inline-block; color: inherit;">${word}</span>`;
-      }).join('<span class="letter-space" style="display: inline-block; width: 0.28em;"> </span>');
-    }).join('<br/>');
-  }
+  // ─── RENDER NỘI DUNG THƯ (CHUẨN XÁC VÀ KHÔNG BAO GIỜ MẤT CHỮ) ──────────────────────────
 
   renderCurrentPageContent(animate = true) {
     const wrapper = this.element?.querySelector('#page-content-wrapper');
@@ -411,27 +364,27 @@ export class LetterScreen {
     let html = '';
 
     if (isFirstPage && birthdayData?.letter?.salutation) {
-      html += `<div class="reading-salutation" style="color: #4a1c28; font-weight: 600;">${this.formatTextToSpans(birthdayData.letter.salutation)}</div>`;
+      html += `<div class="reading-salutation" style="color: #d6336c; font-weight: 700; font-size: 1.15rem; margin-bottom: 1.2rem; opacity: 1;">${birthdayData.letter.salutation}</div>`;
     }
 
     if (page.subtitle) {
-      html += `<div class="reading-page-subtitle" style="color: #b87333; font-style: italic;"> ${this.formatTextToSpans(page.subtitle)}</div>`;
+      html += `<div class="reading-page-subtitle" style="color: #b87333; font-style: italic; font-weight: 600; margin-bottom: 1rem; opacity: 1;">${page.subtitle}</div>`;
     }
 
-    html += '<div class="reading-body" style="color: #4a1c28; font-size: 1.02rem; line-height: 1.8;">';
+    html += '<div class="reading-body" style="color: #2b2b2b; font-size: 1.05rem; line-height: 1.8; opacity: 1;">';
     const paragraphs = page.paragraphs || [];
     paragraphs.forEach((p, idx) => {
-      html += `<p class="reading-paragraph" data-idx="${idx}" style="margin-bottom: 1.2rem; color: #4a1c28; opacity: 1;">${this.formatTextToSpans(p)}</p>`;
+      html += `<p class="reading-paragraph" data-idx="${idx}" style="margin-bottom: 1.2rem; color: #2b2b2b; opacity: 1; display: block;">${p}</p>`;
     });
     html += '</div>';
 
     if (isLastPage) {
-      html += '<div class="reading-closing-area" style="margin-top: 1.5rem; color: #4a1c28;">';
+      html += '<div class="reading-closing-area" style="margin-top: 2rem; color: #2b2b2b; text-align: right; opacity: 1;">';
       if (birthdayData?.letter?.closing) {
-        html += `<div class="reading-closing" style="font-weight: 600;">${this.formatTextToSpans(birthdayData.letter.closing)}</div>`;
+        html += `<div class="reading-closing" style="font-weight: 600; color: #d6336c;">${birthdayData.letter.closing}</div>`;
       }
       if (birthdayData?.letter?.signature) {
-        html += `<div class="reading-signature" style="font-style: italic; font-size: 1.1rem;">${this.formatTextToSpans(birthdayData.letter.signature)}</div>`;
+        html += `<div class="reading-signature" style="font-style: italic; font-size: 1.2rem; margin-top: 0.5rem; color: #333;">${birthdayData.letter.signature}</div>`;
       }
       html += '</div>';
     }
@@ -446,24 +399,11 @@ export class LetterScreen {
     this.updatePaginationControls();
 
     if (animate) {
-      const charElements = wrapper.querySelectorAll('.letter-char');
-      if (charElements.length > 0) {
-        gsap.killTweensOf(charElements);
-        gsap.fromTo(
-          charElements,
-          { opacity: 0, y: 10 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.35,
-            stagger: { amount: 1.8, from: 'start' },
-            ease: 'power2.out',
-            onComplete: () => {
-              gsap.set(charElements, { clearProps: 'transform,opacity' });
-            }
-          }
-        );
-      }
+      gsap.fromTo(
+        wrapper,
+        { opacity: 0, y: 15 },
+        { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' }
+      );
     }
   }
 
@@ -472,7 +412,7 @@ export class LetterScreen {
     if (!indicator) return;
 
     if (this.pages.length <= 1) {
-      indicator.innerHTML = `<span class="reading-badge-small">FOR MY SPECIAL ONE</span>`;
+      indicator.innerHTML = `<span class="reading-badge-small" style="color: #d6336c; font-weight: 600; font-size: 0.85rem;">FOR MY SPECIAL ONE ♡</span>`;
       return;
     }
 
@@ -482,7 +422,7 @@ export class LetterScreen {
     }
 
     indicator.innerHTML = `
-      <span class="reading-page-badge">Trang ${this.currentPageIndex + 1} / ${this.pages.length}</span>
+      <span class="reading-page-badge" style="color: #6c757d; font-size: 0.85rem; font-weight: 600;">Trang ${this.currentPageIndex + 1} / ${this.pages.length}</span>
       <div class="page-dots" aria-hidden="true">${dotsHtml}</div>
     `;
   }
@@ -500,27 +440,27 @@ export class LetterScreen {
     if (this.pages.length <= 1) {
       html = `
         <div style="width: 100%; display: flex; justify-content: center;">
-          <button class="btn-continue-journey" id="btn-continue-journey" aria-label="${continueText}">
+          <button class="btn-continue-journey modern-btn" id="btn-continue-journey" aria-label="${continueText}" style="background: linear-gradient(135deg, #ff758c 0%, #ff7eb3 100%); color: white; border: none; padding: 12px 28px; border-radius: 25px; font-weight: 600; cursor: pointer;">
             <span>${continueText}</span>
           </button>
         </div>
       `;
     } else {
       html += `
-        <button class="btn-page-turn" id="btn-prev-page" ${isFirstPage ? 'disabled aria-disabled="true"' : ''} aria-label="Trang trước">
+        <button class="btn-page-turn" id="btn-prev-page" ${isFirstPage ? 'disabled aria-disabled="true"' : ''} aria-label="Trang trước" style="padding: 10px 18px; border-radius: 20px; cursor: pointer; opacity: ${isFirstPage ? 0.4 : 1};">
           <span>← Trang trước</span>
         </button>
       `;
 
       if (!isLastPage) {
         html += `
-          <button class="btn-page-turn btn-next" id="btn-next-page" aria-label="Sang trang tiếp theo">
+          <button class="btn-page-turn btn-next" id="btn-next-page" aria-label="Sang trang tiếp theo" style="padding: 10px 18px; border-radius: 20px; cursor: pointer;">
             <span>Sang trang →</span>
           </button>
         `;
       } else {
         html += `
-          <button class="btn-continue-journey" id="btn-continue-journey" style="padding: 0.85rem 2rem; font-size: 0.85rem;" aria-label="${continueText}">
+          <button class="btn-continue-journey modern-btn" id="btn-continue-journey" style="background: linear-gradient(135deg, #ff758c 0%, #ff7eb3 100%); color: white; border: none; padding: 10px 20px; border-radius: 20px; font-size: 0.9rem; font-weight: 600; cursor: pointer;" aria-label="${continueText}">
             <span>${continueText}</span>
           </button>
         `;
@@ -533,17 +473,9 @@ export class LetterScreen {
     const nextBtn = controls.querySelector('#btn-next-page');
     const continueBtn = controls.querySelector('#btn-continue-journey');
 
-    if (prevBtn) {
-      prevBtn.addEventListener('click', () => this.goToPage(this.currentPageIndex - 1));
-    }
-
-    if (nextBtn) {
-      nextBtn.addEventListener('click', () => this.goToPage(this.currentPageIndex + 1));
-    }
-
-    if (continueBtn) {
-      continueBtn.addEventListener('click', () => this.revealClosingPanel());
-    }
+    if (prevBtn) prevBtn.addEventListener('click', () => this.goToPage(this.currentPageIndex - 1));
+    if (nextBtn) nextBtn.addEventListener('click', () => this.goToPage(this.currentPageIndex + 1));
+    if (continueBtn) continueBtn.addEventListener('click', () => this.revealClosingPanel());
   }
 
   goToPage(newIndex) {
@@ -555,31 +487,29 @@ export class LetterScreen {
 
     gsap.to(wrapper, {
       opacity: 0,
-      x: isForward ? -22 : 22,
+      x: isForward ? -25 : 25,
       duration: 0.22,
       ease: 'power1.in',
-      force3D: true,
       onComplete: () => {
         this.currentPageIndex = newIndex;
         this.renderCurrentPageContent(true);
 
         gsap.fromTo(
           wrapper,
-          { opacity: 0, x: isForward ? 22 : -22 },
-          { opacity: 1, x: 0, duration: 0.38, ease: 'power2.out', force3D: true }
+          { opacity: 0, x: isForward ? 25 : -25 },
+          { opacity: 1, x: 0, duration: 0.35, ease: 'power2.out' }
         );
       },
     });
   }
+
+  // ─── TƯƠNG TÁC KÉO / MỞ PHONG BÌ ────────────────────────────────────────
 
   setupInteractions() {
     const envelopeWrapper = this.element.querySelector('#envelope-wrapper');
     const draggableSheet = this.element.querySelector('#draggable-letter-sheet');
     const waxSeal = this.element.querySelector('#wax-seal');
     const foldBackBtn = this.element.querySelector('#btn-fold-back');
-    const stage5Panel = this.element.querySelector('#stage5-panel');
-    const rereadBtn = this.element.querySelector('#btn-stage5-reread');
-    const replayAllBtn = this.element.querySelector('#btn-stage5-replay-all');
     const continueJourney = this.element.querySelector('#btn-stage5-continue');
     const readingCard = this.element.querySelector('#letter-reading-card');
 
@@ -605,6 +535,7 @@ export class LetterScreen {
       this.currentPullY = 0;
       draggableSheet?.classList.add('is-dragging');
       envelopeWrapper?.classList.add('is-unsealed');
+      if (draggableSheet) draggableSheet.style.transition = 'none';
 
       window.addEventListener('pointermove', onPointerMove, { passive: true });
       window.addEventListener('pointerup', onPointerUp, { passive: true });
@@ -615,12 +546,14 @@ export class LetterScreen {
       if (!this.isDraggingLetter || this.isOpen) return;
       const clientY = e.clientY ?? e.touches?.[0]?.clientY ?? this.startY;
       const deltaY = clientY - this.startY;
+
       if (deltaY < 0) {
-        this.currentPullY = Math.max(-185, deltaY);
+        this.currentPullY = Math.max(-160, deltaY * 0.85);
         if (draggableSheet) {
           draggableSheet.style.transform = `translateY(${this.currentPullY}px)`;
         }
-        if (this.currentPullY <= -110) {
+
+        if (this.currentPullY <= -100) {
           this.isDraggingLetter = false;
           draggableSheet?.classList.remove('is-dragging');
           onPointerUp();
@@ -636,11 +569,11 @@ export class LetterScreen {
       window.removeEventListener('pointerup', onPointerUp);
       window.removeEventListener('pointercancel', onPointerUp);
 
-      if (!this.isOpen && draggableSheet && this.currentPullY > -110) {
+      if (!this.isOpen && draggableSheet && this.currentPullY > -100) {
         gsap.to(draggableSheet, {
           y: 0,
-          duration: 0.4,
-          ease: 'back.out(1.5)',
+          duration: 0.6,
+          ease: 'elastic.out(1, 0.5)',
           onComplete: () => {
             envelopeWrapper?.classList.remove('is-unsealed');
           }
@@ -683,22 +616,6 @@ export class LetterScreen {
       foldBackBtn.addEventListener('click', () => this.foldBackEnvelope());
     }
 
-    if (rereadBtn) {
-      rereadBtn.addEventListener('click', () => {
-        if (stage5Panel) stage5Panel.style.display = 'none';
-        this.goToPage(0);
-        requestAnimationFrame(() => {
-          readingCard?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        });
-      });
-    }
-
-    if (replayAllBtn && this.onReplayAll) {
-      replayAllBtn.addEventListener('click', () => {
-        this.onReplayAll();
-      });
-    }
-
     if (continueJourney && this.onContinueToMemories) {
       continueJourney.addEventListener('click', () => this.onContinueToMemories());
     }
@@ -708,10 +625,16 @@ export class LetterScreen {
     const stage5Panel = this.element?.querySelector('#stage5-panel');
     if (!stage5Panel) return;
     stage5Panel.style.display = 'block';
-    spawnMagicBurst(stage5Panel, 12);
-    requestAnimationFrame(() => {
-      stage5Panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    });
+
+    gsap.fromTo(stage5Panel,
+      { opacity: 0, y: 30, scale: 0.95 },
+      {
+        opacity: 1, y: 0, scale: 1, duration: 0.8, ease: 'elastic.out(1, 0.7)', onComplete: () => {
+          spawnMagicBurst(stage5Panel, 15);
+          stage5Panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+    );
   }
 
   openLetterCompletely() {
@@ -724,39 +647,39 @@ export class LetterScreen {
     const readingCard = this.element.querySelector('#letter-reading-card');
 
     envelopeWrapper?.classList.add('is-unsealed');
-    spawnMagicBurst(this.element, 18);
+    spawnMagicBurst(this.element, 24);
 
     this.renderCurrentPageContent(true);
 
     const tl = gsap.timeline();
 
     tl.to(draggableSheet, {
-      y: -140,
+      y: -200,
       opacity: 0,
-      duration: 0.5,
-      ease: 'power2.in',
+      duration: 0.6,
+      ease: 'back.in(1.2)',
       force3D: true,
     }, 0);
 
     tl.to(envelopeArea, {
       opacity: 0,
-      scale: 0.92,
-      duration: 0.45,
-      ease: 'power2.inOut',
+      scale: 0.85,
+      duration: 0.5,
+      ease: 'power3.inOut',
       force3D: true,
     }, 0.15);
 
     tl.add(() => {
       if (envelopeArea) envelopeArea.style.display = 'none';
       if (readingCard) {
-        readingCard.style.display = 'block';
+        readingCard.style.display = 'flex';
         readingCard.style.opacity = '0';
       }
     }, 0.55);
 
     tl.fromTo(readingCard,
-      { opacity: 0, y: 24 },
-      { opacity: 1, y: 0, duration: 0.65, ease: 'power2.out', force3D: true },
+      { opacity: 0, y: 40, scale: 0.95 },
+      { opacity: 1, y: 0, scale: 1, duration: 0.7, ease: 'expo.out', clearProps: 'transform' },
       0.55
     );
   }
@@ -779,7 +702,6 @@ export class LetterScreen {
       y: 20,
       duration: 0.4,
       ease: 'power2.in',
-      force3D: true,
       onComplete: () => {
         if (readingCard) readingCard.style.display = 'none';
         this.currentPageIndex = 0;
@@ -788,9 +710,9 @@ export class LetterScreen {
     });
 
     tl.fromTo(envelopeArea,
-      { opacity: 0, scale: 0.92 },
-      { opacity: 1, scale: 1, duration: 0.55, ease: 'power2.out', force3D: true },
-      0.4
+      { opacity: 0, scale: 0.85 },
+      { opacity: 1, scale: 1, duration: 0.55, ease: 'power2.out' },
+      0.35
     );
 
     tl.add(() => {
@@ -804,17 +726,10 @@ export class LetterScreen {
     });
   }
 
-  // ─── DESTROY & CLEANUP ─────────────────────────────────────────────────────
-
-  destroy(onComplete) {
-    if (this._pointerMoveBound) window.removeEventListener('pointermove', this._pointerMoveBound);
-    if (this._pointerUpBound) window.removeEventListener('pointerup', this._pointerUpBound);
-    if (this._pointerCancelBound) window.removeEventListener('pointercancel', this._pointerCancelBound);
-    if (this._onResizeBound) window.removeEventListener('resize', this._onResizeBound);
-    if (this.backBtn) this.backBtn.destroy();
-
+  disposeThreeResources() {
     if (this.threeAnimId) {
       cancelAnimationFrame(this.threeAnimId);
+      this.threeAnimId = null;
     }
 
     if (this.threeScene) {
@@ -822,13 +737,9 @@ export class LetterScreen {
         if (object.geometry) object.geometry.dispose();
         if (object.material) {
           if (Array.isArray(object.material)) {
-            object.material.forEach(mat => {
-              mat.dispose();
-              if (mat.map) mat.map.dispose();
-            });
+            object.material.forEach(mat => mat.dispose());
           } else {
             object.material.dispose();
-            if (object.material.map) object.material.map.dispose();
           }
         }
       });
@@ -842,7 +753,21 @@ export class LetterScreen {
     this.threeScene = null;
     this.threeCamera = null;
     this.particleSystem = null;
+    this.floatingHearts = [];
     this.threeRenderer = null;
+  }
+
+  destroy(onComplete) {
+    if (this._pointerMoveBound) window.removeEventListener('pointermove', this._pointerMoveBound);
+    if (this._pointerUpBound) window.removeEventListener('pointerup', this._pointerUpBound);
+    if (this._pointerCancelBound) window.removeEventListener('pointercancel', this._pointerCancelBound);
+    if (this._onResizeBound) {
+      window.removeEventListener('resize', this._onResizeBound);
+      window.removeEventListener('orientationchange', this._onResizeBound);
+    }
+    if (this.backBtn) this.backBtn.destroy();
+
+    this.disposeThreeResources();
 
     if (!this.element) {
       if (onComplete) onComplete();

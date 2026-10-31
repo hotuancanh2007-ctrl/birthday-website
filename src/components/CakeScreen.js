@@ -218,6 +218,42 @@ function skyTexture() {
     return toSRGB(new THREE.CanvasTexture(c));
 }
 
+function cosmicBackdropTexture() {
+    const w = 1024, h = 512;
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const g = c.getContext('2d');
+    const base = g.createLinearGradient(0, 0, 0, h);
+    base.addColorStop(0, '#120818');
+    base.addColorStop(0.45, '#2a0f2e');
+    base.addColorStop(0.8, '#4a1a3f');
+    base.addColorStop(1, '#6b2b4f');
+    g.fillStyle = base;
+    g.fillRect(0, 0, w, h);
+    [
+        [0.22, 0.38, 280, 'rgba(255,120,180,0.22)'],
+        [0.62, 0.30, 340, 'rgba(180,120,255,0.20)'],
+        [0.86, 0.62, 260, 'rgba(255,190,120,0.14)'],
+        [0.40, 0.72, 300, 'rgba(255,150,200,0.16)']
+    ].forEach(([x, y, r, col]) => {
+        const grad = g.createRadialGradient(x * w, y * h, 0, x * w, y * h, r);
+        grad.addColorStop(0, col);
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
+        g.fillStyle = grad;
+        g.fillRect(0, 0, w, h);
+    });
+    for (let i = 0; i < 420; i++) {
+        const a = 0.15 + Math.random() * 0.8;
+        const warm = Math.floor(230 + Math.random() * 25);
+        const cool = Math.floor(200 + Math.random() * 55);
+        g.fillStyle = `rgba(255,${warm},${cool},${a})`;
+        g.beginPath();
+        g.arc(Math.random() * w, Math.random() * h, Math.random() * 1.1 + 0.2, 0, Math.PI * 2);
+        g.fill();
+    }
+    return toSRGB(new THREE.CanvasTexture(c));
+}
+
 function heartPath(ctx, s) {
     ctx.beginPath();
     ctx.moveTo(0, s * 0.35);
@@ -485,6 +521,28 @@ const STYLES = `
     #cake-screen-wrapper .cs-btn { padding: 12px 20px; font-size: 13px; }
 }
 
+/* ---------- Cosmic luxury skin for the cake screen (scoped) ---------- */
+#cake-screen-wrapper .cs-cake { --ink: #fbeee6; --muted: #e9c7d4; --rose-deep: #ffc2d6; }
+#cake-screen-wrapper .cs-cake .cs-glass {
+    background: linear-gradient(160deg, rgba(60,22,52,.62), rgba(30,10,30,.5));
+    border: 1px solid rgba(255,218,170,.32);
+    box-shadow: 0 24px 60px -24px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,236,214,.22);
+}
+#cake-screen-wrapper .cs-cake .cs-stepper { color: #ffd9a8; letter-spacing: .04em; }
+#cake-screen-wrapper .cs-cake .cs-panel-title {
+    background: linear-gradient(120deg, #fff4e0, #ffd9a8 50%, #fbe3ea);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+#cake-screen-wrapper .cs-cake .cs-wish-title { color: #ffd9a8; text-shadow: 0 0 22px rgba(255,200,140,.45); }
+#cake-screen-wrapper .cs-cake .cs-ring .fill { stroke: #ffd27a; filter: drop-shadow(0 0 6px rgba(255,210,120,.7)); }
+#cake-screen-wrapper .cs-cake .cs-ring .track { stroke: rgba(255,210,150,.2); }
+#cake-screen-wrapper .cs-cake .cs-btn {
+    background: linear-gradient(135deg, #ffd27a 0%, #e8a870 50%, #d9848f 100%); color: #3a1430;
+    box-shadow: 0 12px 30px -10px rgba(255,190,110,.6), inset 0 1px 0 rgba(255,255,255,.6);
+}
+#cake-screen-wrapper .cs-cake .cs-btn.cs-btn--soft { background: linear-gradient(135deg, #fff4e0, #ffd9a8); color: #6b2f48; }
+#cake-screen-wrapper .cs-cake .cs-btn.cs-btn--ghost { background: rgba(255,255,255,.12); color: #ffe9f1; }
+
 #cake-screen-wrapper.cs-reduced *, #cake-screen-wrapper.cs-reduced *::before, #cake-screen-wrapper.cs-reduced *::after { animation-duration: .001s !important; animation-iteration-count: 1 !important; transition-duration: .001s !important; }
 `;
 
@@ -590,6 +648,13 @@ export class CakeScreen {
         this.floatingCats = [];
         this.floatingFlowers = [];
         this.ambientParticles = null;
+        this.starfield = null;
+        this.starfieldMat = null;
+        this.orbitGroup = null;
+        this.orbitMat = null;
+        this.gems = [];
+        this.nextShootingStar = 2.5;
+        this.orbitHearts = [];
 
         // 2D garden state
         this.gardenState = 'idle'; // idle | growing | ready
@@ -1234,8 +1299,8 @@ export class CakeScreen {
         const isMobile = w < 768;
 
         this.scene = new THREE.Scene();
-        this.scene.background = skyTexture();
-        this.scene.fog = new THREE.FogExp2(0xf0bdd3, 0.0075);
+        this.scene.background = cosmicBackdropTexture();
+        this.scene.fog = new THREE.FogExp2(0x2a1030, this.prefersReducedMotion ? 0.0075 : 0.02);
         this.fogBase = this.scene.fog.color.clone();
 
         let camZ = isMobile ? 48 : 35;
@@ -1253,7 +1318,7 @@ export class CakeScreen {
         }
 
         this.cameraBasePos.set(0, camY, camZ);
-        this.camera = new THREE.PerspectiveCamera(fov, aspect, 0.1, 100);
+        this.camera = new THREE.PerspectiveCamera(fov, aspect, 0.1, 260);
         this.camPos = { x: this.cameraBasePos.x, y: this.cameraBasePos.y + (this.prefersReducedMotion ? 0 : 4) };
         this.camera.position.set(this.camPos.x, this.camPos.y, this.cameraBasePos.z + (this.prefersReducedMotion ? 0 : 16));
 
@@ -1262,7 +1327,7 @@ export class CakeScreen {
             canvas: this.globalCanvas || undefined, alpha: true, antialias: true, powerPreference: 'high-performance'
         });
         this.renderer.setSize(w, h);
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.25 : 1.5));
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -1286,6 +1351,7 @@ export class CakeScreen {
         this.buildFloor();
         this.buildCake();
         this.buildGarden3D();
+        this.buildCosmos(isMobile);
 
         if (!this.prefersReducedMotion) {
             this.createMagicalButterflies();
@@ -1358,6 +1424,8 @@ export class CakeScreen {
         ];
         this.addRibbon(this.tiers[1], 4.2, 2.4);
         this.addBerries(this.tiers[2], 2.2);
+        this.tiers.forEach((tier, i) => this.addGoldBands(tier, [5.5, 4.2, 2.8][i], [2.8, 2.4, 2.2][i]));
+        this.addCrystalCrown(this.tiers[2], 2.2);
 
         let currentY = 2.1;
         this.tiers.forEach(tier => {
@@ -1487,6 +1555,34 @@ export class CakeScreen {
         bow.add(new THREE.Mesh(new THREE.SphereGeometry(0.26, 12, 12), satin));
         bow.position.set(0, -height * 0.12, radius + 0.18);
         tier.add(band, bow);
+    }
+
+    addGoldBands(tier, radius, height) {
+        const goldMat = new THREE.MeshStandardMaterial({ color: 0xf5cf6b, roughness: 0.18, metalness: 1 });
+        [height / 2 - 0.12, -height / 2 + 0.12].forEach(y => {
+            const band = new THREE.Mesh(new THREE.TorusGeometry(radius + 0.05, 0.05, 10, 96), goldMat);
+            band.rotation.x = Math.PI / 2;
+            band.position.y = y;
+            band.castShadow = true;
+            tier.add(band);
+        });
+    }
+
+    addCrystalCrown(tier, height) {
+        const crystalMat = new THREE.MeshStandardMaterial({
+            color: 0xfff4fa, roughness: 0.05, metalness: 0.15, emissive: 0xffb6d9, emissiveIntensity: 0.28
+        });
+        const geo = new THREE.OctahedronGeometry(0.2, 0);
+        for (let i = 0; i < 6; i++) {
+            const a = (i / 6) * Math.PI * 2 + Math.PI / 6;
+            const gem = new THREE.Mesh(geo, crystalMat);
+            gem.position.set(Math.cos(a) * 2.35, height / 2 + 0.22, Math.sin(a) * 2.35);
+            gem.scale.set(1, 1.6, 1);
+            gem.castShadow = true;
+            gem.userData.baseY = gem.position.y;
+            tier.add(gem);
+            this.gems.push(gem);
+        }
     }
 
     addBerries(tier, height) {
@@ -1622,6 +1718,60 @@ export class CakeScreen {
         }
     }
 
+    buildCosmos(isMobile) {
+        const starCount = isMobile ? 500 : 1400;
+        const starPos = new Float32Array(starCount * 3);
+        const starCol = new Float32Array(starCount * 3);
+        const starPalette = ['#ffffff', '#ffe9f2', '#ffe3a3', '#f9d6ff'].map(c => new THREE.Color(c));
+        for (let i = 0; i < starCount; i++) {
+            const u = Math.random() * 2 - 1, t = Math.random() * Math.PI * 2;
+            const s = Math.sqrt(1 - u * u), r = rand(45, 130);
+            starPos[i * 3] = Math.cos(t) * s * r;
+            starPos[i * 3 + 1] = u * r * 0.7 + 8;
+            starPos[i * 3 + 2] = Math.sin(t) * s * r;
+            const c = starPalette[i % starPalette.length];
+            starCol.set([c.r, c.g, c.b], i * 3);
+        }
+        const starGeo = new THREE.BufferGeometry();
+        starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+        starGeo.setAttribute('color', new THREE.BufferAttribute(starCol, 3));
+        this.starfieldMat = new THREE.PointsMaterial({
+            size: isMobile ? 0.9 : 0.75, vertexColors: true, transparent: true, opacity: 0.85,
+            depthWrite: false, fog: false, blending: THREE.AdditiveBlending,
+            map: radialTexture([[0, 'rgba(255,255,255,1)'], [0.35, 'rgba(255,255,255,.6)'], [1, 'rgba(255,255,255,0)']], 64)
+        });
+        this.starfield = new THREE.Points(starGeo, this.starfieldMat);
+        this.scene.add(this.starfield);
+
+        const heartCanvas = document.createElement('canvas');
+        heartCanvas.width = heartCanvas.height = 64;
+        const hc = heartCanvas.getContext('2d');
+        const hg = hc.createLinearGradient(0, 14, 0, 46);
+        hg.addColorStop(0, '#ffd6e4');
+        hg.addColorStop(1, '#ff7fa8');
+        hc.fillStyle = hg;
+        hc.translate(32, 36);
+        heartPath(hc, 19);
+        hc.fill();
+        this.orbitMat = new THREE.SpriteMaterial({
+            map: toSRGB(new THREE.CanvasTexture(heartCanvas)), transparent: true, opacity: 0.6, depthWrite: false, fog: false
+        });
+        this.orbitGroup = new THREE.Group();
+        this.orbitGroup.position.set(0, 3, 0);
+        this.orbitGroup.rotation.x = 0.12;
+        const heartCount = isMobile ? 26 : 48;
+        for (let i = 0; i < heartCount; i++) {
+            const a = rand(0, Math.PI * 2), r = rand(6.5, 10.5);
+            const heart = new THREE.Sprite(this.orbitMat);
+            heart.position.set(Math.cos(a) * r, rand(-4, 5), Math.sin(a) * r);
+            heart.scale.setScalar(rand(0.5, 0.95));
+            heart.userData = { speed: rand(0.006, 0.014), phase: rand(0, Math.PI * 2) };
+            this.orbitGroup.add(heart);
+            this.orbitHearts.push(heart);
+        }
+        this.scene.add(this.orbitGroup);
+    }
+
     buildGarden3D() {
         this.createCats();
         this.createFloatingHearts();
@@ -1738,6 +1888,33 @@ export class CakeScreen {
         }
     }
 
+    spawnShootingStar() {
+        if (this.prefersReducedMotion || !this.scene) return;
+        const start = new THREE.Vector3(rand(-40, 40), rand(18, 34), rand(-60, -30));
+        const dir = new THREE.Vector3(rand(0.6, 1), rand(-0.8, -0.5), rand(0, 0.3)).normalize();
+        const end = start.clone().addScaledVector(dir, 26);
+        const geo = new THREE.BufferGeometry().setFromPoints([start.clone(), start.clone()]);
+        const mat = new THREE.LineBasicMaterial({
+            color: 0xfff1c9, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false
+        });
+        const line = new THREE.Line(geo, mat);
+        this.scene.add(line);
+        const p = { t: 0 };
+        this.track(gsap.to(p, {
+            t: 1, duration: rand(0.9, 1.4), ease: 'power2.in',
+            onUpdate: () => {
+                const head = start.clone().lerp(end, p.t);
+                const tail = start.clone().lerp(end, Math.max(0, p.t - 0.18));
+                const pos = geo.attributes.position;
+                pos.setXYZ(0, head.x, head.y, head.z);
+                pos.setXYZ(1, tail.x, tail.y, tail.z);
+                pos.needsUpdate = true;
+                mat.opacity = Math.sin(p.t * Math.PI) * 0.9;
+            },
+            onComplete: () => { this.scene.remove(line); geo.dispose(); mat.dispose(); }
+        }));
+    }
+
     spawnSmoke() {
         if (this.prefersReducedMotion) return;
         const map = radialTexture([[0, 'rgba(255,255,255,.7)'], [1, 'rgba(255,255,255,0)']], 64);
@@ -1762,6 +1939,10 @@ export class CakeScreen {
     playEntranceSequence() {
         const tl = this.track(gsap.timeline());
         tl.to(this.stepper, { opacity: 1, duration: 0.9, ease: 'power2.out' }, 0.3);
+        if (!this.prefersReducedMotion) {
+            tl.fromTo(this.renderer, { toneMappingExposure: 0.15 }, { toneMappingExposure: 0.95, duration: 2.6, ease: 'power2.out' }, 0);
+            tl.to(this.scene.fog, { density: 0.0075, duration: 3.2, ease: 'power2.out' }, 0);
+        }
         this.tiers.forEach((tier, i) => tl.to(tier.scale, { x: 1, y: 1, z: 1, duration: 1.4, ease: 'elastic.out(1, 0.6)' }, 0.1 + i * 0.3));
         tl.to(this.candleGroup.scale, { x: 1, y: 1, z: 1, duration: 1.2, ease: 'back.out(1.5)' }, '>-0.6');
         if (!this.prefersReducedMotion) tl.to(this.camera.position, { z: this.cameraBasePos.z, duration: 2.8, ease: 'power3.out' }, 0);
@@ -1781,7 +1962,8 @@ export class CakeScreen {
             .to(this.lights.hemi, { intensity: 0.12, duration: dimTo }, 'dim')
             .to(this.lights.dirLight, { intensity: 0.08, duration: dimTo }, 'dim')
             .to(this.lights.rim, { intensity: 0.15, duration: dimTo }, 'dim')
-            .to(this.scene.fog.color, { r: 0.2, g: 0.1, b: 0.25, duration: dimTo }, 'dim');
+            .to(this.scene.fog.color, { r: 0.2, g: 0.1, b: 0.25, duration: dimTo }, 'dim')
+            .to(this.orbitMat, { opacity: 1, duration: dimTo }, 'dim');
         if (typeof this.scene.backgroundIntensity === 'number') {
             tl.to(this.scene, { backgroundIntensity: 0.3, duration: dimTo }, 'dim');
         }
@@ -1991,6 +2173,25 @@ export class CakeScreen {
             this.ambientParticles.geometry.attributes.position.needsUpdate = true;
         }
 
+        if (this.starfield && !this.prefersReducedMotion) {
+            this.starfield.rotation.y = time * 0.004;
+            this.starfieldMat.opacity = 0.7 + Math.sin(time * 0.9) * 0.15;
+        }
+        if (this.orbitGroup) this.orbitGroup.rotation.y = time * (this.flameReady ? 0.5 : 0.22);
+        this.orbitHearts.forEach(h => {
+            h.position.y += h.userData.speed;
+            h.position.x += Math.sin(time + h.userData.phase) * 0.002;
+            if (h.position.y > 6) h.position.y = -4;
+        });
+        this.gems.forEach((g, i) => {
+            g.rotation.y = time * 0.7 + i;
+            g.position.y = g.userData.baseY + Math.sin(time * 1.4 + i) * 0.05;
+        });
+        if (!this.prefersReducedMotion && time > this.nextShootingStar) {
+            this.spawnShootingStar();
+            this.nextShootingStar = time + rand(5, 9);
+        }
+
         this.composer.render();
     }
 
@@ -2060,7 +2261,7 @@ export class CakeScreen {
         this.camera.fov = fov;
         this.camera.updateProjectionMatrix();
 
-        const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+        const dpr = Math.min(window.devicePixelRatio || 1, w < 768 ? 1.25 : 1.5);
         this.renderer.setSize(w, h);
         this.renderer.setPixelRatio(dpr);
         if (this.composer) {
